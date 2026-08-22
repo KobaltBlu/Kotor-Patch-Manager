@@ -5,8 +5,8 @@
     <Color x:Key="PrimaryColor">#00AFFF</Color>
     <Color x:Key="BackgroundColor">#000016</Color>
     <Color x:Key="AccentColor">#FFFF00</Color>
-    <Color x:Key="PanelFillColor">#0A1028</Color>
-    <Color x:Key="PanelInsetColor">#050812</Color>
+    <Color x:Key="PanelFillColor">#0C1838</Color>
+    <Color x:Key="PanelInsetColor">#060C1A</Color>
     <Color x:Key="GridLineColor">#1A3A66</Color>
     <Color x:Key="GlowColor">#40FFFF00</Color>
     <Color x:Key="CaptionColor">#7EC8E3</Color>

@@ -153,6 +153,7 @@ public class PatchItemViewModel : ViewModelBase
 
     public bool HasRequires => Requires.Count > 0;
     public bool HasConflicts => Conflicts.Count > 0;
+    public bool HasDependencies => HasRequires || HasConflicts;
     public bool HasSupportedVersions => SupportedVersions.Count > 0;
     public bool HasUrl => !string.IsNullOrWhiteSpace(Url);
     public bool HasLicense => !string.IsNullOrWhiteSpace(License);

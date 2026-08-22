@@ -1,5 +1,75 @@
 <Styles xmlns="https://github.com/avaloniaui"
-        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:controls="using:KPatchLauncher.Controls">
+
+    <Style Selector="controls|HudPanel">
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="Template">
+            <ControlTemplate>
+                <Grid>
+                    <Border Background="{DynamicResource PanelFillBrush}"
+                            BorderBrush="{DynamicResource PrimaryBrush}"
+                            BorderThickness="1"
+                            CornerRadius="{DynamicResource HudCornerRadius}"/>
+
+                    <Grid IsHitTestVisible="False">
+                        <Path Stroke="{DynamicResource AccentBrush}"
+                              StrokeThickness="2"
+                              HorizontalAlignment="Left"
+                              VerticalAlignment="Top"
+                              Data="M 0,16 L 0,0 L 16,0"/>
+                        <Path Stroke="{DynamicResource AccentBrush}"
+                              StrokeThickness="2"
+                              HorizontalAlignment="Right"
+                              VerticalAlignment="Top"
+                              Data="M 0,0 L 16,0 L 16,16"/>
+                        <Path Stroke="{DynamicResource AccentBrush}"
+                              StrokeThickness="2"
+                              HorizontalAlignment="Left"
+                              VerticalAlignment="Bottom"
+                              Data="M 0,0 L 0,16 L 16,16"/>
+                        <Path Stroke="{DynamicResource AccentBrush}"
+                              StrokeThickness="2"
+                              HorizontalAlignment="Right"
+                              VerticalAlignment="Bottom"
+                              Data="M 16,0 L 16,16 L 0,16"/>
+                    </Grid>
+
+                    <DockPanel Margin="14,12">
+                        <StackPanel DockPanel.Dock="Top"
+                                    Spacing="6"
+                                    Margin="0,0,0,10"
+                                    IsVisible="{TemplateBinding Header, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+                            <DockPanel>
+                                <ContentPresenter DockPanel.Dock="Right"
+                                                  Content="{TemplateBinding HeaderContent}"
+                                                  VerticalAlignment="Center"
+                                                  Margin="12,0,0,0"/>
+                                <StackPanel Spacing="2" VerticalAlignment="Center">
+                                    <TextBlock Text="{TemplateBinding Header}"
+                                               Classes="display"
+                                               FontSize="12"
+                                               Foreground="{DynamicResource AccentBrush}"/>
+                                    <TextBlock Text="{TemplateBinding Subtitle}"
+                                               Classes="mono"
+                                               FontSize="11"
+                                               Foreground="{DynamicResource CaptionBrush}"
+                                               IsVisible="{TemplateBinding Subtitle, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
+                                </StackPanel>
+                            </DockPanel>
+                            <Border Height="1"
+                                    Background="{DynamicResource PrimaryBrush}"
+                                    Opacity="0.55"/>
+                        </StackPanel>
+                        <ContentPresenter Content="{TemplateBinding Content}"
+                                          ContentTemplate="{TemplateBinding ContentTemplate}"
+                                          HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                          VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"/>
+                    </DockPanel>
+                </Grid>
+            </ControlTemplate>
+        </Setter>
+    </Style>
 
     <Style Selector="Window">
         <Setter Property="FontFamily" Value="{StaticResource HudBodyFont}"/>
@@ -262,5 +332,44 @@
     </Style>
     <Style Selector="Border.badge-error TextBlock">
         <Setter Property="Foreground" Value="{DynamicResource ErrorBrush}"/>
+    </Style>
+
+    <Style Selector="Border.version-badge">
+        <Setter Property="Background" Value="{DynamicResource PanelInsetBrush}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource PrimaryBrush}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="Padding" Value="10,3"/>
+        <Setter Property="VerticalAlignment" Value="Center"/>
+        <Setter Property="Margin" Value="0,0,12,0"/>
+    </Style>
+    <Style Selector="Border.version-badge TextBlock">
+        <Setter Property="FontFamily" Value="{StaticResource HudMonoFont}"/>
+        <Setter Property="FontSize" Value="11"/>
+        <Setter Property="Foreground" Value="{DynamicResource CaptionBrush}"/>
+    </Style>
+
+    <Style Selector="StackPanel.hud-section">
+        <Setter Property="Spacing" Value="8"/>
+        <Setter Property="Margin" Value="0,0,0,14"/>
+    </Style>
+    <Style Selector="StackPanel.hud-section > TextBlock.section-title">
+        <Setter Property="FontFamily" Value="{StaticResource HudDisplayFont}"/>
+        <Setter Property="FontSize" Value="10"/>
+        <Setter Property="LetterSpacing" Value="1.5"/>
+        <Setter Property="Foreground" Value="{DynamicResource CaptionBrush}"/>
+        <Setter Property="Margin" Value="0,0,0,2"/>
+    </Style>
+    <Style Selector="Border.section-rule">
+        <Setter Property="Height" Value="1"/>
+        <Setter Property="Background" Value="{DynamicResource GridLineBrush}"/>
+        <Setter Property="Opacity" Value="0.8"/>
+        <Setter Property="Margin" Value="0,0,0,6"/>
+    </Style>
+    <Style Selector="Border.section-inset">
+        <Setter Property="Background" Value="{DynamicResource PanelInsetBrush}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource GridLineBrush}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="Padding" Value="10,8"/>
+        <Setter Property="CornerRadius" Value="{DynamicResource HudCornerRadius}"/>
     </Style>
 </Styles>

@@ -22,8 +22,8 @@
     </Design.DataContext>
 
     <Grid>
-        <!-- Grid + scanline overlays -->
-        <Border IsHitTestVisible="False" Opacity="0.18">
+        <!-- Softened grid + scanline overlays -->
+        <Border IsHitTestVisible="False" Opacity="0.10">
             <Border.Background>
                 <VisualBrush TileMode="Tile"
                              SourceRect="0,0,28,28"
@@ -37,7 +37,7 @@
                 </VisualBrush>
             </Border.Background>
         </Border>
-        <Border IsHitTestVisible="False" Opacity="0.07">
+        <Border IsHitTestVisible="False" Opacity="0.04">
             <Border.Background>
                 <VisualBrush TileMode="Tile"
                              SourceRect="0,0,4,4"
@@ -51,9 +51,9 @@
             </Border.Background>
         </Border>
 
-        <Grid RowDefinitions="42,Auto,*,Auto">
+        <Grid RowDefinitions="42,Auto,*,Auto" Margin="0">
 
-            <!-- Custom title bar -->
+            <!-- 1. Title bar -->
             <Grid x:Name="TitleBar"
                   Grid.Row="0"
                   ColumnDefinitions="Auto,*,Auto,Auto"
@@ -63,7 +63,7 @@
                 <StackPanel Grid.Column="0"
                             Orientation="Horizontal"
                             Spacing="10"
-                            Margin="14,0,0,0"
+                            Margin="16,0,0,0"
                             VerticalAlignment="Center">
                     <TextBlock Text="KOTOR PATCH MANAGER"
                                Classes="display"
@@ -71,17 +71,15 @@
                                Foreground="{DynamicResource AccentBrush}"
                                VerticalAlignment="Center"/>
                 </StackPanel>
-                <TextBlock Grid.Column="2"
-                           Text="{Binding KotorVersion}"
-                           Classes="mono"
-                           FontSize="12"
-                           Foreground="{DynamicResource CaptionBrush}"
-                           VerticalAlignment="Center"
-                           Margin="0,0,12,0"/>
+                <Border Grid.Column="2"
+                        Classes="version-badge"
+                        IsVisible="{Binding !IsFirstRun}">
+                    <TextBlock Text="{Binding KotorVersion}"/>
+                </Border>
                 <StackPanel Grid.Column="3"
                             Orientation="Horizontal"
                             VerticalAlignment="Center"
-                            Margin="0,0,6,0">
+                            Margin="0,0,8,0">
                     <Button Classes="chrome"
                             Content="—"
                             Click="OnMinimize"
@@ -97,35 +95,42 @@
                 </StackPanel>
             </Grid>
 
-            <!-- Path header -->
-            <Grid Grid.Row="1"
-                  ColumnDefinitions="*,Auto,*"
-                  Margin="12,8,12,4"
-                  ColumnSpacing="12">
-                <controls:PathField Label="GAME"
-                                    PathText="{Binding GamePath}"
-                                    Watermark="Path to swkotor.exe"
-                                    BrowseCommand="{Binding BrowseGameCommand}"
-                                    IsBrowseEnabled="{Binding CanEditPaths}"/>
-                <Button Grid.Column="1"
-                        Content="REFRESH"
-                        Command="{Binding RefreshCommand}"
-                        VerticalAlignment="Center"
-                        MinWidth="96"/>
-                <controls:PathField Grid.Column="2"
-                                    Label="PATCHES"
-                                    PathText="{Binding PatchesPath}"
-                                    Watermark="Directory containing .kpatch files"
-                                    BrowseCommand="{Binding BrowsePatchesCommand}"
-                                    IsBrowseEnabled="{Binding CanEditPaths}"/>
-            </Grid>
+            <!-- 2. TARGET -->
+            <controls:HudPanel Grid.Row="1"
+                               Header="TARGET"
+                               Subtitle="{Binding KotorVersion, StringFormat=Detected: {0}}"
+                               Margin="16,8,16,0">
+                <controls:HudPanel.HeaderContent>
+                    <Button Content="REFRESH"
+                            Command="{Binding RefreshCommand}"
+                            MinWidth="96"
+                            MinHeight="28"
+                            Padding="12,4"/>
+                </controls:HudPanel.HeaderContent>
+                <Grid ColumnDefinitions="*,12,*">
+                    <controls:PathField Label="GAME"
+                                        PathText="{Binding GamePath}"
+                                        Watermark="Path to swkotor.exe"
+                                        BrowseCommand="{Binding BrowseGameCommand}"
+                                        IsBrowseEnabled="{Binding CanEditPaths}"/>
+                    <controls:PathField Grid.Column="2"
+                                        Label="PATCHES"
+                                        PathText="{Binding PatchesPath}"
+                                        Watermark="Directory containing .kpatch files"
+                                        BrowseCommand="{Binding BrowsePatchesCommand}"
+                                        IsBrowseEnabled="{Binding CanEditPaths}"/>
+                </Grid>
+            </controls:HudPanel>
 
-            <!-- Main body -->
-            <Grid Grid.Row="2" Margin="12,8">
-                <!-- First-run setup -->
+            <!-- 3. Body: INITIALIZE or workspace -->
+            <Grid Grid.Row="2" Margin="16,12,16,0">
                 <controls:HudPanel Header="INITIALIZE"
                                    IsVisible="{Binding IsFirstRun}">
-                    <StackPanel Spacing="14" VerticalAlignment="Center" MaxWidth="560" HorizontalAlignment="Center">
+                    <StackPanel Spacing="14"
+                                VerticalAlignment="Center"
+                                MaxWidth="560"
+                                HorizontalAlignment="Center"
+                                Margin="0,24">
                         <TextBlock Text="SELECT GAME EXECUTABLE"
                                    Classes="display"
                                    FontSize="16"
@@ -144,13 +149,12 @@
                     </StackPanel>
                 </controls:HudPanel>
 
-                <!-- Normal workspace -->
                 <Grid ColumnDefinitions="2*,3*"
-                      ColumnSpacing="10"
+                      ColumnSpacing="12"
                       IsVisible="{Binding !IsFirstRun}">
                     <controls:HudPanel Header="PATCHES">
                         <controls:HudPanel.HeaderContent>
-                            <StackPanel Orientation="Horizontal" Spacing="8">
+                            <StackPanel Orientation="Horizontal" Spacing="6">
                                 <Button Classes="icon"
                                         Content="↑"
                                         Command="{Binding MoveUpCommand}"
@@ -219,107 +223,137 @@
                         <Grid>
                             <ScrollViewer VerticalScrollBarVisibility="Auto"
                                           IsVisible="{Binding SelectedPatch, Converter={x:Static ObjectConverters.IsNotNull}}">
-                                <StackPanel Spacing="12">
-                                    <StackPanel>
-                                        <TextBlock Text="NAME" Classes="caption"/>
-                                        <TextBlock Text="{Binding SelectedPatch.Name}"
-                                                   Classes="display"
-                                                   FontSize="18"
-                                                   TextWrapping="Wrap"
-                                                   Foreground="{DynamicResource AccentBrush}"/>
-                                    </StackPanel>
-                                    <Grid ColumnDefinitions="*,*" ColumnSpacing="16">
-                                        <StackPanel>
-                                            <TextBlock Text="VERSION" Classes="caption"/>
-                                            <TextBlock Text="{Binding SelectedPatch.Version}" Classes="mono"/>
-                                        </StackPanel>
-                                        <StackPanel Grid.Column="1">
-                                            <TextBlock Text="AUTHOR" Classes="caption"/>
-                                            <TextBlock Text="{Binding SelectedPatch.Author}"/>
-                                        </StackPanel>
-                                    </Grid>
-                                    <StackPanel>
-                                        <TextBlock Text="DESCRIPTION" Classes="caption"/>
-                                        <TextBlock Text="{Binding SelectedPatch.Description}" TextWrapping="Wrap"/>
-                                    </StackPanel>
-                                    <StackPanel IsVisible="{Binding SelectedPatch.HasRequires}">
-                                        <TextBlock Text="REQUIRES" Classes="caption"/>
-                                        <ItemsControl ItemsSource="{Binding SelectedPatch.Requires}">
-                                            <ItemsControl.ItemTemplate>
-                                                <DataTemplate>
+                                <StackPanel>
+                                    <!-- Identity -->
+                                    <StackPanel Classes="hud-section">
+                                        <TextBlock Text="IDENTITY" Classes="section-title"/>
+                                        <Border Classes="section-rule"/>
+                                        <Border Classes="section-inset">
+                                            <StackPanel Spacing="10">
+                                                <StackPanel>
+                                                    <TextBlock Text="NAME" Classes="caption"/>
+                                                    <TextBlock Text="{Binding SelectedPatch.Name}"
+                                                               Classes="display"
+                                                               FontSize="18"
+                                                               TextWrapping="Wrap"
+                                                               Foreground="{DynamicResource AccentBrush}"/>
+                                                </StackPanel>
+                                                <Grid ColumnDefinitions="*,*" ColumnSpacing="16">
+                                                    <StackPanel>
+                                                        <TextBlock Text="VERSION" Classes="caption"/>
+                                                        <TextBlock Text="{Binding SelectedPatch.Version}" Classes="mono"/>
+                                                    </StackPanel>
+                                                    <StackPanel Grid.Column="1">
+                                                        <TextBlock Text="AUTHOR" Classes="caption"/>
+                                                        <TextBlock Text="{Binding SelectedPatch.Author}"/>
+                                                    </StackPanel>
+                                                </Grid>
+                                                <StackPanel>
+                                                    <TextBlock Text="DESCRIPTION" Classes="caption"/>
+                                                    <TextBlock Text="{Binding SelectedPatch.Description}" TextWrapping="Wrap"/>
+                                                </StackPanel>
+                                                <StackPanel IsVisible="{Binding SelectedPatch.HasLicense}">
+                                                    <TextBlock Text="LICENSE" Classes="caption"/>
+                                                    <TextBlock Text="{Binding SelectedPatch.License}" TextWrapping="Wrap"/>
+                                                </StackPanel>
+                                                <StackPanel IsVisible="{Binding SelectedPatch.HasUrl}">
+                                                    <TextBlock Text="URL" Classes="caption"/>
                                                     <Button Classes="link"
-                                                            Content="{Binding}"
-                                                            Command="{Binding $parent[Window].DataContext.SelectPatchCommand}"
-                                                            CommandParameter="{Binding}"/>
-                                                </DataTemplate>
-                                            </ItemsControl.ItemTemplate>
-                                        </ItemsControl>
+                                                            Content="{Binding SelectedPatch.Url}"
+                                                            Command="{Binding OpenUrlCommand}"
+                                                            CommandParameter="{Binding SelectedPatch.Url}"/>
+                                                </StackPanel>
+                                            </StackPanel>
+                                        </Border>
                                     </StackPanel>
-                                    <StackPanel IsVisible="{Binding SelectedPatch.HasConflicts}">
-                                        <TextBlock Text="CONFLICTS" Classes="caption"/>
-                                        <ItemsControl ItemsSource="{Binding SelectedPatch.Conflicts}">
-                                            <ItemsControl.ItemTemplate>
-                                                <DataTemplate>
-                                                    <Button Classes="link"
-                                                            Content="{Binding}"
-                                                            Command="{Binding $parent[Window].DataContext.SelectPatchCommand}"
-                                                            CommandParameter="{Binding}"/>
-                                                </DataTemplate>
-                                            </ItemsControl.ItemTemplate>
-                                        </ItemsControl>
+
+                                    <!-- Dependencies -->
+                                    <StackPanel Classes="hud-section"
+                                                IsVisible="{Binding SelectedPatch.HasDependencies}">
+                                        <TextBlock Text="DEPENDENCIES" Classes="section-title"/>
+                                        <Border Classes="section-rule"/>
+                                        <Border Classes="section-inset">
+                                            <StackPanel Spacing="10">
+                                                <StackPanel IsVisible="{Binding SelectedPatch.HasRequires}">
+                                                    <TextBlock Text="REQUIRES" Classes="caption"/>
+                                                    <ItemsControl ItemsSource="{Binding SelectedPatch.Requires}">
+                                                        <ItemsControl.ItemTemplate>
+                                                            <DataTemplate>
+                                                                <Button Classes="link"
+                                                                        Content="{Binding}"
+                                                                        Command="{Binding $parent[Window].DataContext.SelectPatchCommand}"
+                                                                        CommandParameter="{Binding}"/>
+                                                            </DataTemplate>
+                                                        </ItemsControl.ItemTemplate>
+                                                    </ItemsControl>
+                                                </StackPanel>
+                                                <StackPanel IsVisible="{Binding SelectedPatch.HasConflicts}">
+                                                    <TextBlock Text="CONFLICTS" Classes="caption"/>
+                                                    <ItemsControl ItemsSource="{Binding SelectedPatch.Conflicts}">
+                                                        <ItemsControl.ItemTemplate>
+                                                            <DataTemplate>
+                                                                <Button Classes="link"
+                                                                        Content="{Binding}"
+                                                                        Command="{Binding $parent[Window].DataContext.SelectPatchCommand}"
+                                                                        CommandParameter="{Binding}"/>
+                                                            </DataTemplate>
+                                                        </ItemsControl.ItemTemplate>
+                                                    </ItemsControl>
+                                                </StackPanel>
+                                            </StackPanel>
+                                        </Border>
                                     </StackPanel>
-                                    <StackPanel IsVisible="{Binding SelectedPatch.HasSupportedVersions}">
-                                        <TextBlock Text="SUPPORTED VERSIONS" Classes="caption"/>
-                                        <TextBlock Text="{Binding SelectedPatch.SupportedVersionsText}"
-                                                   Classes="mono"
-                                                   TextWrapping="Wrap"
-                                                   FontSize="12"/>
+
+                                    <!-- Compatibility -->
+                                    <StackPanel Classes="hud-section" Margin="0">
+                                        <TextBlock Text="COMPATIBILITY" Classes="section-title"/>
+                                        <Border Classes="section-rule"/>
+                                        <Border Classes="section-inset">
+                                            <StackPanel Spacing="10">
+                                                <StackPanel IsVisible="{Binding SelectedPatch.HasSupportedVersions}">
+                                                    <TextBlock Text="SUPPORTED VERSIONS" Classes="caption"/>
+                                                    <TextBlock Text="{Binding SelectedPatch.SupportedVersionsText}"
+                                                               Classes="mono"
+                                                               TextWrapping="Wrap"
+                                                               FontSize="12"/>
+                                                </StackPanel>
+                                                <StackPanel>
+                                                    <TextBlock Text="STATUS" Classes="caption"/>
+                                                    <TextBlock Text="{Binding SelectedPatch.CompatibilityStatus}" TextWrapping="Wrap"/>
+                                                </StackPanel>
+                                                <Border Background="{DynamicResource ErrorBackgroundBrush}"
+                                                        BorderBrush="{DynamicResource ErrorBrush}"
+                                                        BorderThickness="1"
+                                                        Padding="8"
+                                                        IsVisible="{Binding SelectedPatch.IsOrphaned}">
+                                                    <StackPanel Spacing="4">
+                                                        <TextBlock Text="ORPHANED PATCH"
+                                                                   Classes="display"
+                                                                   FontSize="12"
+                                                                   Foreground="{DynamicResource ErrorBrush}"/>
+                                                        <TextBlock Text="Installed in the game but missing from the patches directory. Unchecking it uninstalls it."
+                                                                   TextWrapping="Wrap"
+                                                                   FontSize="12"/>
+                                                    </StackPanel>
+                                                </Border>
+                                                <Border Background="{DynamicResource PanelFillBrush}"
+                                                        BorderBrush="{DynamicResource WarningBrush}"
+                                                        BorderThickness="1"
+                                                        Padding="8"
+                                                        IsVisible="{Binding HasDependencyWarning}">
+                                                    <StackPanel Spacing="4">
+                                                        <TextBlock Text="DEPENDENCY WARNING"
+                                                                   Classes="display"
+                                                                   FontSize="12"
+                                                                   Foreground="{DynamicResource WarningBrush}"/>
+                                                        <TextBlock Text="{Binding DependencyWarning}"
+                                                                   TextWrapping="Wrap"
+                                                                   FontSize="12"/>
+                                                    </StackPanel>
+                                                </Border>
+                                            </StackPanel>
+                                        </Border>
                                     </StackPanel>
-                                    <StackPanel IsVisible="{Binding SelectedPatch.HasLicense}">
-                                        <TextBlock Text="LICENSE" Classes="caption"/>
-                                        <TextBlock Text="{Binding SelectedPatch.License}" TextWrapping="Wrap"/>
-                                    </StackPanel>
-                                    <StackPanel IsVisible="{Binding SelectedPatch.HasUrl}">
-                                        <TextBlock Text="URL" Classes="caption"/>
-                                        <Button Classes="link"
-                                                Content="{Binding SelectedPatch.Url}"
-                                                Command="{Binding OpenUrlCommand}"
-                                                CommandParameter="{Binding SelectedPatch.Url}"/>
-                                    </StackPanel>
-                                    <StackPanel>
-                                        <TextBlock Text="COMPATIBILITY" Classes="caption"/>
-                                        <TextBlock Text="{Binding SelectedPatch.CompatibilityStatus}" TextWrapping="Wrap"/>
-                                    </StackPanel>
-                                    <Border Background="{DynamicResource ErrorBackgroundBrush}"
-                                            BorderBrush="{DynamicResource ErrorBrush}"
-                                            BorderThickness="1"
-                                            Padding="8"
-                                            IsVisible="{Binding SelectedPatch.IsOrphaned}">
-                                        <StackPanel Spacing="4">
-                                            <TextBlock Text="ORPHANED PATCH"
-                                                       Classes="display"
-                                                       FontSize="12"
-                                                       Foreground="{DynamicResource ErrorBrush}"/>
-                                            <TextBlock Text="Installed in the game but missing from the patches directory. Unchecking it uninstalls it."
-                                                       TextWrapping="Wrap"
-                                                       FontSize="12"/>
-                                        </StackPanel>
-                                    </Border>
-                                    <Border Background="{DynamicResource PanelInsetBrush}"
-                                            BorderBrush="{DynamicResource WarningBrush}"
-                                            BorderThickness="1"
-                                            Padding="8"
-                                            IsVisible="{Binding HasDependencyWarning}">
-                                        <StackPanel Spacing="4">
-                                            <TextBlock Text="DEPENDENCY WARNING"
-                                                       Classes="display"
-                                                       FontSize="12"
-                                                       Foreground="{DynamicResource WarningBrush}"/>
-                                            <TextBlock Text="{Binding DependencyWarning}"
-                                                       TextWrapping="Wrap"
-                                                       FontSize="12"/>
-                                        </StackPanel>
-                                    </Border>
                                 </StackPanel>
                             </ScrollViewer>
                             <TextBlock Text="Select a patch to view details"
@@ -333,59 +367,71 @@
                 </Grid>
             </Grid>
 
-            <!-- Status / command HUD -->
-            <DockPanel Grid.Row="3" Margin="12,4,12,12">
-                <ProgressBar DockPanel.Dock="Top"
-                             IsVisible="{Binding IsOperationInProgress}"
-                             IsIndeterminate="{Binding IsOperationInProgress}"
-                             Height="6"
-                             Margin="0,0,0,8"/>
-                <StackPanel DockPanel.Dock="Bottom"
-                            Orientation="Horizontal"
-                            Spacing="12"
-                            Margin="0,8,0,0"
-                            IsVisible="{Binding ShowLaunchSettings}">
-                    <CheckBox Content="Custom launch command"
-                              IsChecked="{Binding UseCustomLaunch}"
-                              IsEnabled="{Binding CanEditPaths}"
-                              ToolTip.Tip="Off: launch through Steam. On: run your own command (Lutris, Heroic, Wine...)."/>
-                    <TextBox Text="{Binding CustomLaunchCommand}"
-                             Watermark="e.g. wine &quot;{exe}&quot;   ({exe} = game path)"
-                             IsEnabled="{Binding UseCustomLaunch}"
-                             MinWidth="280"/>
-                </StackPanel>
-                <Grid ColumnDefinitions="*,Auto">
-                    <StackPanel Orientation="Horizontal" Spacing="18" VerticalAlignment="Center">
-                        <TextBlock Text="{Binding StatusMessage}"
-                                   Classes="mono"
-                                   FontSize="12"
-                                   VerticalAlignment="Center"/>
-                        <TextBlock Text="{Binding PendingChangesMessage}"
-                                   Classes="mono"
-                                   FontSize="12"
-                                   Foreground="{DynamicResource AccentBrush}"
-                                   VerticalAlignment="Center"/>
-                    </StackPanel>
-                    <StackPanel Grid.Column="1"
+            <!-- 4. COMMANDS -->
+            <controls:HudPanel Grid.Row="3"
+                               Header="COMMANDS"
+                               Margin="16,12,16,16"
+                               IsVisible="{Binding !IsFirstRun}">
+                <DockPanel>
+                    <ProgressBar DockPanel.Dock="Top"
+                                 IsVisible="{Binding IsOperationInProgress}"
+                                 IsIndeterminate="{Binding IsOperationInProgress}"
+                                 Height="6"
+                                 Margin="0,0,0,10"/>
+                    <StackPanel DockPanel.Dock="Bottom"
                                 Orientation="Horizontal"
-                                Spacing="10">
-                        <Button Content="UNINSTALL ALL"
-                                Command="{Binding UninstallAllCommand}"
-                                MinWidth="140"
-                                Height="36"/>
-                        <Button Content="APPLY"
-                                Command="{Binding ApplyPatchesCommand}"
-                                Classes.pending="{Binding HasPendingChanges}"
-                                MinWidth="120"
-                                Height="36"/>
-                        <Button Content="LAUNCH"
-                                Command="{Binding LaunchGameCommand}"
-                                Classes="primary"
-                                MinWidth="120"
-                                Height="36"/>
+                                Spacing="12"
+                                Margin="0,10,0,0"
+                                IsVisible="{Binding ShowLaunchSettings}">
+                        <CheckBox Content="Custom launch command"
+                                  IsChecked="{Binding UseCustomLaunch}"
+                                  IsEnabled="{Binding CanEditPaths}"
+                                  ToolTip.Tip="Off: launch through Steam. On: run your own command (Lutris, Heroic, Wine...)."/>
+                        <TextBox Text="{Binding CustomLaunchCommand}"
+                                 Watermark="e.g. wine &quot;{exe}&quot;   ({exe} = game path)"
+                                 IsEnabled="{Binding UseCustomLaunch}"
+                                 MinWidth="280"
+                                 HorizontalAlignment="Stretch"/>
                     </StackPanel>
-                </Grid>
-            </DockPanel>
+                    <Grid ColumnDefinitions="*,Auto">
+                        <StackPanel Orientation="Horizontal"
+                                    Spacing="16"
+                                    VerticalAlignment="Center">
+                            <TextBlock Text="{Binding StatusMessage}"
+                                       Classes="mono"
+                                       FontSize="12"
+                                       VerticalAlignment="Center"/>
+                            <TextBlock Text="•"
+                                       Foreground="{DynamicResource CaptionBrush}"
+                                       VerticalAlignment="Center"
+                                       IsVisible="{Binding HasPendingChanges}"/>
+                            <TextBlock Text="{Binding PendingChangesMessage}"
+                                       Classes="mono"
+                                       FontSize="12"
+                                       Foreground="{DynamicResource AccentBrush}"
+                                       VerticalAlignment="Center"/>
+                        </StackPanel>
+                        <StackPanel Grid.Column="1"
+                                    Orientation="Horizontal"
+                                    Spacing="10">
+                            <Button Content="UNINSTALL ALL"
+                                    Command="{Binding UninstallAllCommand}"
+                                    MinWidth="140"
+                                    Height="36"/>
+                            <Button Content="APPLY"
+                                    Command="{Binding ApplyPatchesCommand}"
+                                    Classes.pending="{Binding HasPendingChanges}"
+                                    MinWidth="120"
+                                    Height="36"/>
+                            <Button Content="LAUNCH"
+                                    Command="{Binding LaunchGameCommand}"
+                                    Classes="primary"
+                                    MinWidth="120"
+                                    Height="36"/>
+                        </StackPanel>
+                    </Grid>
+                </DockPanel>
+            </controls:HudPanel>
         </Grid>
     </Grid>
 </Window>
