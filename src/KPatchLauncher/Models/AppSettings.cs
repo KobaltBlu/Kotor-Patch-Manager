@@ -46,6 +46,11 @@ public class AppSettings
     public string CustomLaunchCommand { get; set; } = string.Empty;
 
     /// <summary>
+    /// When true, incompatible patches stay visible in the list.
+    /// </summary>
+    public bool ShowIncompatible { get; set; }
+
+    /// <summary>
     /// Legacy property for backwards compatibility (TODO: Remove after migration)
     /// </summary>
     [Obsolete("Use CheckedPatchIds instead")]

@@ -1,0 +1,25 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="KPatchLauncher.Controls.PathField"
+             x:Name="Root">
+    <Grid ColumnDefinitions="Auto,*,Auto" MinHeight="32">
+        <TextBlock Grid.Column="0"
+                   Text="{Binding Label, ElementName=Root}"
+                   Classes="caption"
+                   VerticalAlignment="Center"
+                   Margin="0,0,10,0"
+                   MinWidth="64"/>
+        <TextBox Grid.Column="1"
+                 Text="{Binding PathText, ElementName=Root, Mode=TwoWay}"
+                 Watermark="{Binding Watermark, ElementName=Root}"
+                 IsEnabled="{Binding IsBrowseEnabled, ElementName=Root}"
+                 VerticalAlignment="Center"
+                 ToolTip.Tip="{Binding PathText, ElementName=Root}"/>
+        <Button Grid.Column="2"
+                Content="BROWSE"
+                Command="{Binding BrowseCommand, ElementName=Root}"
+                IsEnabled="{Binding IsBrowseEnabled, ElementName=Root}"
+                Margin="8,0,0,0"
+                MinWidth="88"/>
+    </Grid>
+</UserControl>

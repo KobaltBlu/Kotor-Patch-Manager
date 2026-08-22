@@ -1,0 +1,37 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:controls="using:KPatchLauncher.Controls"
+        x:Class="KPatchLauncher.Controls.HudDialog"
+        Width="460"
+        SizeToContent="Height"
+        CanResize="False"
+        WindowStartupLocation="CenterOwner"
+        SystemDecorations="None"
+        Background="{DynamicResource BackgroundBrush}"
+        Foreground="{DynamicResource PrimaryBrush}"
+        ShowInTaskbar="False">
+    <controls:HudPanel Header="{Binding Title, RelativeSource={RelativeSource AncestorType=Window}}"
+                       Margin="0">
+        <DockPanel>
+            <StackPanel DockPanel.Dock="Bottom"
+                        Orientation="Horizontal"
+                        HorizontalAlignment="Right"
+                        Spacing="10"
+                        Margin="0,16,0,0">
+                <Button x:Name="CancelButton"
+                        Content="CANCEL"
+                        MinWidth="110"
+                        Click="OnCancel"/>
+                <Button x:Name="ConfirmButton"
+                        Content="CONFIRM"
+                        Classes="primary"
+                        MinWidth="110"
+                        Click="OnConfirm"/>
+            </StackPanel>
+            <TextBlock x:Name="MessageText"
+                       TextWrapping="Wrap"
+                       FontSize="14"
+                       LineHeight="20"/>
+        </DockPanel>
+    </controls:HudPanel>
+</Window>

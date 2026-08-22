@@ -1,18 +1,19 @@
 <Application xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="KPatchLauncher.App"
-             RequestedThemeVariant="Default">
-    <Application.Styles>
-        <FluentTheme />
-    </Application.Styles>
-
-    <!-- Merged Resource Dictionaries for Theme Support -->
+             RequestedThemeVariant="Dark">
     <Application.Resources>
         <ResourceDictionary>
+            <FontFamily x:Key="HudDisplayFont">avares://KPatchLauncher/Assets/Fonts/Orbitron.ttf#Orbitron,avares://KPatchLauncher/Assets/Fonts/Audiowide-Regular.ttf#Audiowide</FontFamily>
+            <FontFamily x:Key="HudBodyFont">avares://KPatchLauncher/Assets/Fonts/Rajdhani-Regular.ttf,avares://KPatchLauncher/Assets/Fonts/Rajdhani-SemiBold.ttf,avares://KPatchLauncher/Assets/Fonts/Rajdhani-Bold.ttf#Rajdhani</FontFamily>
+            <FontFamily x:Key="HudMonoFont">avares://KPatchLauncher/Assets/Fonts/ShareTechMono-Regular.ttf#Share Tech Mono</FontFamily>
             <ResourceDictionary.MergedDictionaries>
-                <!-- KOTOR 1 Theme (Default) -->
                 <ResourceInclude Source="avares://KPatchLauncher/Themes/Kotor1Theme.axaml"/>
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
     </Application.Resources>
+    <Application.Styles>
+        <FluentTheme />
+        <StyleInclude Source="avares://KPatchLauncher/Themes/HudControls.axaml"/>
+    </Application.Styles>
 </Application>

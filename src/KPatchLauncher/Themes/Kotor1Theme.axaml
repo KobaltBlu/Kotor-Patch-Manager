@@ -1,22 +1,29 @@
 <ResourceDictionary xmlns="https://github.com/avaloniaui"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
-    <!-- KOTOR 1 Color Palette -->
-    <!-- Primary: Cyan/Light Blue (#00AFFF) -->
-    <!-- Background: Very Dark Blue (#000016) -->
-    <!-- Accent: Yellow (#FFFF00) -->
-
-    <!-- Primary Colors -->
+    <!-- KOTOR 1: cyan wire on deep navy, yellow selection -->
     <Color x:Key="PrimaryColor">#00AFFF</Color>
     <Color x:Key="BackgroundColor">#000016</Color>
     <Color x:Key="AccentColor">#FFFF00</Color>
+    <Color x:Key="PanelFillColor">#0A1028</Color>
+    <Color x:Key="PanelInsetColor">#050812</Color>
+    <Color x:Key="GridLineColor">#1A3A66</Color>
+    <Color x:Key="GlowColor">#40FFFF00</Color>
+    <Color x:Key="CaptionColor">#7EC8E3</Color>
+    <Color x:Key="SuccessColor">#3DFF9A</Color>
+    <Color x:Key="WarningColor">#FFB000</Color>
 
-    <!-- Brushes -->
     <SolidColorBrush x:Key="PrimaryBrush" Color="{StaticResource PrimaryColor}"/>
     <SolidColorBrush x:Key="BackgroundBrush" Color="{StaticResource BackgroundColor}"/>
     <SolidColorBrush x:Key="AccentBrush" Color="{StaticResource AccentColor}"/>
+    <SolidColorBrush x:Key="PanelFillBrush" Color="{StaticResource PanelFillColor}"/>
+    <SolidColorBrush x:Key="PanelInsetBrush" Color="{StaticResource PanelInsetColor}"/>
+    <SolidColorBrush x:Key="GridLineBrush" Color="{StaticResource GridLineColor}"/>
+    <SolidColorBrush x:Key="GlowBrush" Color="{StaticResource GlowColor}"/>
+    <SolidColorBrush x:Key="CaptionBrush" Color="{StaticResource CaptionColor}"/>
+    <SolidColorBrush x:Key="SuccessBrush" Color="{StaticResource SuccessColor}"/>
+    <SolidColorBrush x:Key="WarningBrush" Color="{StaticResource WarningColor}"/>
 
-    <!-- Selection and Hover Colors (Blue shades) -->
     <Color x:Key="SelectionBackgroundColor">#004488</Color>
     <Color x:Key="SelectionBackgroundDarkColor">#002244</Color>
     <Color x:Key="HoverBackgroundColor">#0066AA</Color>
@@ -27,11 +34,11 @@
     <SolidColorBrush x:Key="HoverBackgroundBrush" Color="{StaticResource HoverBackgroundColor}"/>
     <SolidColorBrush x:Key="ProgressBackgroundBrush" Color="{StaticResource ProgressBackgroundColor}"/>
 
-    <!-- Error/Warning Colors (Red shades - kept consistent across themes) -->
     <Color x:Key="ErrorBackgroundColor">#330000</Color>
     <Color x:Key="ErrorColor">#FF0000</Color>
-
     <SolidColorBrush x:Key="ErrorBackgroundBrush" Color="{StaticResource ErrorBackgroundColor}"/>
     <SolidColorBrush x:Key="ErrorBrush" Color="{StaticResource ErrorColor}"/>
 
+    <CornerRadius x:Key="HudCornerRadius">0</CornerRadius>
+    <x:Double x:Key="HudBracketLength">18</x:Double>
 </ResourceDictionary>

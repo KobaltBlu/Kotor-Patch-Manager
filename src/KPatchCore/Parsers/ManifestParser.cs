@@ -82,6 +82,9 @@ public static class ManifestParser
                 }
             }
 
+            TryGetString(patchTable, "url", out var url);
+            TryGetString(patchTable, "license", out var license);
+
             var manifest = new PatchManifest
             {
                 Id = id,
@@ -91,7 +94,9 @@ public static class ManifestParser
                 Description = description,
                 Requires = requires,
                 Conflicts = conflicts,
-                SupportedVersions = supportedVersions
+                SupportedVersions = supportedVersions,
+                Url = string.IsNullOrWhiteSpace(url) ? null : url,
+                License = string.IsNullOrWhiteSpace(license) ? null : license
             };
 
             return PatchResult<PatchManifest>.Ok(manifest, "Manifest parsed successfully");

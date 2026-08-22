@@ -1,0 +1,51 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="KPatchLauncher.Controls.HudPanel"
+             x:Name="Root">
+    <Grid>
+        <Border Background="{DynamicResource PanelFillBrush}"
+                BorderBrush="{DynamicResource PrimaryBrush}"
+                BorderThickness="1"
+                CornerRadius="{DynamicResource HudCornerRadius}"/>
+
+        <!-- Corner brackets -->
+        <Grid IsHitTestVisible="False">
+            <Path Stroke="{DynamicResource AccentBrush}"
+                  StrokeThickness="2"
+                  HorizontalAlignment="Left"
+                  VerticalAlignment="Top"
+                  Data="M 0,16 L 0,0 L 16,0"/>
+            <Path Stroke="{DynamicResource AccentBrush}"
+                  StrokeThickness="2"
+                  HorizontalAlignment="Right"
+                  VerticalAlignment="Top"
+                  Data="M 0,0 L 16,0 L 16,16"/>
+            <Path Stroke="{DynamicResource AccentBrush}"
+                  StrokeThickness="2"
+                  HorizontalAlignment="Left"
+                  VerticalAlignment="Bottom"
+                  Data="M 0,0 L 0,16 L 16,16"/>
+            <Path Stroke="{DynamicResource AccentBrush}"
+                  StrokeThickness="2"
+                  HorizontalAlignment="Right"
+                  VerticalAlignment="Bottom"
+                  Data="M 16,0 L 16,16 L 0,16"/>
+        </Grid>
+
+        <DockPanel Margin="12,10">
+            <DockPanel DockPanel.Dock="Top"
+                       Margin="0,0,0,8"
+                       IsVisible="{Binding Header, ElementName=Root, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+                <ContentPresenter DockPanel.Dock="Right"
+                                  Content="{Binding HeaderContent, ElementName=Root}"
+                                  VerticalAlignment="Center"/>
+                <TextBlock Text="{Binding Header, ElementName=Root}"
+                           Classes="display"
+                           FontSize="13"
+                           Foreground="{DynamicResource AccentBrush}"
+                           VerticalAlignment="Center"/>
+            </DockPanel>
+            <ContentPresenter Content="{Binding Content, ElementName=Root}"/>
+        </DockPanel>
+    </Grid>
+</UserControl>

@@ -42,6 +42,9 @@ public class MainViewModel : ViewModelBase
     private int _patchLoadRequestVersion;
     private bool _useCustomLaunch;
     private string _customLaunchCommand = string.Empty;
+    private string _searchText = string.Empty;
+    private bool _showIncompatible;
+    private string _dependencyWarning = string.Empty;
 
     public MainViewModel()
     {
@@ -60,17 +63,19 @@ public class MainViewModel : ViewModelBase
         _patchesPath = _settings.PatchesPath;
         _useCustomLaunch = _settings.LaunchMethod == LaunchMethod.Custom;
         _customLaunchCommand = _settings.CustomLaunchCommand;
+        _showIncompatible = _settings.ShowIncompatible;
         ClearPersistedPatchSelection();
 
-        // Create simple commands
-        BrowseGameCommand = new SimpleCommand(async () => await BrowseGame());
-        BrowsePatchesCommand = new SimpleCommand(async () => await BrowsePatches());
-        RefreshCommand = new SimpleCommand(async () => await Refresh());
-        MoveUpCommand = new SimpleCommand(() => MoveUp());
-        MoveDownCommand = new SimpleCommand(() => MoveDown());
-        ApplyPatchesCommand = new SimpleCommand(async () => await ApplyPatches());
-        UninstallAllCommand = new SimpleCommand(async () => await UninstallAll(), () => HasInstalledPatches);
-        LaunchGameCommand = new SimpleCommand(async () => await LaunchGame());
+        BrowseGameCommand = new SimpleCommand(async () => await BrowseGame(), () => CanEditPaths);
+        BrowsePatchesCommand = new SimpleCommand(async () => await BrowsePatches(), () => CanEditPaths);
+        RefreshCommand = new SimpleCommand(async () => await Refresh(), () => CanEditPaths);
+        MoveUpCommand = new SimpleCommand(p => MovePatch(p, -1));
+        MoveDownCommand = new SimpleCommand(p => MovePatch(p, 1));
+        ApplyPatchesCommand = new SimpleCommand(async () => await ApplyPatches(), () => CanEditPaths && HasValidGamePath);
+        UninstallAllCommand = new SimpleCommand(async () => await UninstallAll(), () => HasInstalledPatches && CanEditPaths);
+        LaunchGameCommand = new SimpleCommand(async () => await LaunchGame(), () => HasValidGamePath);
+        SelectPatchCommand = new SimpleCommand(p => SelectPatchById(p as string));
+        OpenUrlCommand = new SimpleCommand(p => OpenUrl(p as string));
 
         // Load patches if path is set
         if (!string.IsNullOrWhiteSpace(_patchesPath))
@@ -89,7 +94,57 @@ public class MainViewModel : ViewModelBase
     /// </summary>
     public ObservableCollection<PatchItemViewModel> VisiblePatches { get; } = new();
 
+    public IDialogService? Dialogs { get; set; }
+
     public bool HasVisiblePatches => VisiblePatches.Count > 0;
+
+    public bool HasValidGamePath => !string.IsNullOrWhiteSpace(_gamePath) && File.Exists(_gamePath);
+
+    public bool IsFirstRun => !HasValidGamePath;
+
+    public bool CanEditPaths => !IsOperationInProgress;
+
+    public bool HasPendingChanges => PendingChangesCount > 0;
+
+    public string SearchText
+    {
+        get => _searchText;
+        set
+        {
+            if (SetProperty(ref _searchText, value))
+            {
+                SyncVisiblePatches();
+            }
+        }
+    }
+
+    public bool ShowIncompatible
+    {
+        get => _showIncompatible;
+        set
+        {
+            if (SetProperty(ref _showIncompatible, value))
+            {
+                _settings.ShowIncompatible = value;
+                _settings.Save();
+                SyncVisiblePatches();
+            }
+        }
+    }
+
+    public string DependencyWarning
+    {
+        get => _dependencyWarning;
+        private set
+        {
+            if (SetProperty(ref _dependencyWarning, value))
+            {
+                OnPropertyChanged(nameof(HasDependencyWarning));
+            }
+        }
+    }
+
+    public bool HasDependencyWarning => !string.IsNullOrWhiteSpace(DependencyWarning);
 
     public bool? SelectAllPatches
     {
@@ -113,7 +168,13 @@ public class MainViewModel : ViewModelBase
     public PatchItemViewModel? SelectedPatch
     {
         get => _selectedPatch;
-        set => SetProperty(ref _selectedPatch, value);
+        set
+        {
+            if (SetProperty(ref _selectedPatch, value))
+            {
+                UpdateDependencyWarning();
+            }
+        }
     }
 
     public bool HasInstalledPatches
@@ -123,7 +184,7 @@ public class MainViewModel : ViewModelBase
         {
             if (SetProperty(ref _hasInstalledPatches, value))
             {
-                ((SimpleCommand)UninstallAllCommand).RaiseCanExecuteChanged();
+                RefreshCommandStates();
             }
         }
     }
@@ -131,7 +192,14 @@ public class MainViewModel : ViewModelBase
     public bool IsOperationInProgress
     {
         get => _isOperationInProgress;
-        private set => SetProperty(ref _isOperationInProgress, value);
+        private set
+        {
+            if (SetProperty(ref _isOperationInProgress, value))
+            {
+                OnPropertyChanged(nameof(CanEditPaths));
+                RefreshCommandStates();
+            }
+        }
     }
 
     public double ProgressValue
@@ -150,6 +218,9 @@ public class MainViewModel : ViewModelBase
                 _settings.GamePath = value;
                 UpdateGameBrowseDirectory(value);
                 _settings.Save();
+                OnPropertyChanged(nameof(HasValidGamePath));
+                OnPropertyChanged(nameof(IsFirstRun));
+                RefreshCommandStates();
 
                 InvalidatePatchStateForGamePathChange();
 
@@ -282,6 +353,8 @@ public class MainViewModel : ViewModelBase
     public ICommand ApplyPatchesCommand { get; }
     public ICommand UninstallAllCommand { get; }
     public ICommand LaunchGameCommand { get; }
+    public ICommand SelectPatchCommand { get; }
+    public ICommand OpenUrlCommand { get; }
 
     private bool IsInstalled(string patchId) => _installedPatchIds.Contains(patchId);
 
@@ -451,21 +524,12 @@ public class MainViewModel : ViewModelBase
     {
         if (sender is PatchItemViewModel patch)
         {
-            if (!_isBulkUpdatingPatchChecks && patch.IsChecked)
-            {
-                // Move to top of list
-                var index = AllPatches.IndexOf(patch);
-                if (index > 0)
-                {
-                    AllPatches.Move(index, 0);
-                }
-            }
-
             if (!_isBulkUpdatingPatchChecks)
             {
                 SaveCheckedPatches();
                 UpdatePendingChanges();
                 UpdateSelectAllState();
+                UpdateDependencyWarning();
             }
         }
     }
@@ -535,33 +599,56 @@ public class MainViewModel : ViewModelBase
         OnPropertyChanged(nameof(HasVisiblePatches));
     }
 
-    private void MoveUp()
+    private void MovePatch(object? parameter, int delta)
     {
-        if (SelectedPatch == null)
+        var patch = parameter as PatchItemViewModel ?? SelectedPatch;
+        if (patch == null)
             return;
 
-        var patch = SelectedPatch;
         var index = AllPatches.IndexOf(patch);
-        if (index > 0)
-        {
-            AllPatches.Move(index, index - 1);
-            StatusMessage = $"Moved {patch.Name} up";
-            UpdatePendingChanges();
-        }
+        var target = index + delta;
+        if (index < 0 || target < 0 || target >= AllPatches.Count)
+            return;
+
+        AllPatches.Move(index, target);
+        StatusMessage = $"Moved {patch.Name} {(delta < 0 ? "up" : "down")}";
+        UpdatePendingChanges();
     }
 
-    private void MoveDown()
+    private void SelectPatchById(string? id)
     {
-        if (SelectedPatch == null)
+        if (string.IsNullOrWhiteSpace(id))
             return;
 
-        var patch = SelectedPatch;
-        var index = AllPatches.IndexOf(patch);
-        if (index < AllPatches.Count - 1)
+        var match = AllPatches.FirstOrDefault(p =>
+            string.Equals(p.Id, id, StringComparison.OrdinalIgnoreCase));
+        if (match == null)
+            return;
+
+        if (!VisiblePatches.Contains(match) && !match.IsCompatible && !match.IsOrphaned)
         {
-            AllPatches.Move(index, index + 1);
-            StatusMessage = $"Moved {patch.Name} down";
-            UpdatePendingChanges();
+            ShowIncompatible = true;
+        }
+
+        SelectedPatch = match;
+    }
+
+    private static void OpenUrl(string? url)
+    {
+        if (string.IsNullOrWhiteSpace(url))
+            return;
+
+        try
+        {
+            Process.Start(new ProcessStartInfo
+            {
+                FileName = url,
+                UseShellExecute = true
+            });
+        }
+        catch
+        {
+            // Opening a browser is optional; ignore failures.
         }
     }
 
@@ -697,7 +784,23 @@ public class MainViewModel : ViewModelBase
     /// </summary>
     private void SyncVisiblePatches()
     {
-        var desired = AllPatches.Where(p => p.IsCompatible).ToList();
+        IEnumerable<PatchItemViewModel> query = AllPatches;
+        if (!ShowIncompatible)
+        {
+            query = query.Where(p => p.IsCompatible || p.IsOrphaned);
+        }
+
+        if (!string.IsNullOrWhiteSpace(SearchText))
+        {
+            var term = SearchText.Trim();
+            query = query.Where(p =>
+                p.Name.Contains(term, StringComparison.OrdinalIgnoreCase)
+                || p.Author.Contains(term, StringComparison.OrdinalIgnoreCase)
+                || p.Id.Contains(term, StringComparison.OrdinalIgnoreCase)
+                || p.DisplayText.Contains(term, StringComparison.OrdinalIgnoreCase));
+        }
+
+        var desired = query.ToList();
         var desiredSet = new HashSet<PatchItemViewModel>(desired);
 
         for (var i = VisiblePatches.Count - 1; i >= 0; i--)
@@ -745,8 +848,66 @@ public class MainViewModel : ViewModelBase
 
     private void UpdatePendingChanges()
     {
+        UpdateInstallStates();
         OnPropertyChanged(nameof(PendingChangesCount));
         OnPropertyChanged(nameof(PendingChangesMessage));
+        OnPropertyChanged(nameof(HasPendingChanges));
+    }
+
+    private void UpdateInstallStates()
+    {
+        foreach (var patch in AllPatches)
+        {
+            patch.IsInstalled = IsInstalled(patch.Id);
+        }
+    }
+
+    private void UpdateDependencyWarning()
+    {
+        var patch = SelectedPatch;
+        if (patch == null || !patch.IsChecked)
+        {
+            DependencyWarning = string.Empty;
+            return;
+        }
+
+        var checkedIds = AllPatches
+            .Where(p => p.IsChecked)
+            .Select(p => p.Id)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        var missing = patch.Requires
+            .Where(id => !checkedIds.Contains(id))
+            .ToList();
+        var conflicts = patch.Conflicts
+            .Where(id => checkedIds.Contains(id))
+            .ToList();
+
+        var parts = new List<string>();
+        if (missing.Count > 0)
+            parts.Add("Missing required: " + string.Join(", ", missing));
+        if (conflicts.Count > 0)
+            parts.Add("Conflicts with: " + string.Join(", ", conflicts));
+
+        DependencyWarning = string.Join("  •  ", parts);
+    }
+
+    private void RefreshCommandStates()
+    {
+        ((SimpleCommand)BrowseGameCommand).RaiseCanExecuteChanged();
+        ((SimpleCommand)BrowsePatchesCommand).RaiseCanExecuteChanged();
+        ((SimpleCommand)RefreshCommand).RaiseCanExecuteChanged();
+        ((SimpleCommand)ApplyPatchesCommand).RaiseCanExecuteChanged();
+        ((SimpleCommand)UninstallAllCommand).RaiseCanExecuteChanged();
+        ((SimpleCommand)LaunchGameCommand).RaiseCanExecuteChanged();
+    }
+
+    private async Task ShowErrorAsync(string title, string message)
+    {
+        if (Dialogs == null)
+            return;
+
+        await Dialogs.ShowErrorAsync(title, message);
     }
 
     private void SetOperationInProgress(bool inProgress, string? message = null, bool isAutoRefresh = false)
@@ -765,7 +926,7 @@ public class MainViewModel : ViewModelBase
         }
     }
 
-    private async Task ApplyPatches()
+    private async Task ApplyPatches(bool skipEmptyConfirm = false)
     {
         if (string.IsNullOrWhiteSpace(GamePath) || !File.Exists(GamePath))
         {
@@ -786,6 +947,15 @@ public class MainViewModel : ViewModelBase
             // If no patches are checked, uninstall all
             if (checkedPatches.Count == 0)
             {
+                if (!skipEmptyConfirm && Dialogs != null)
+                {
+                    var confirmed = await Dialogs.ConfirmAsync(
+                        "UNINSTALL ALL",
+                        "No patches are selected. This will remove every installed patch from the game.");
+                    if (!confirmed)
+                        return;
+                }
+
                 SetOperationInProgress(true, "Uninstalling all patches...");
 
                 var uninstallResult = await Task.Run(() =>
@@ -803,6 +973,9 @@ public class MainViewModel : ViewModelBase
                         SetOperationInProgress(false, $"Error: {uninstallResult.Error}");
                     }
                 });
+
+                if (!uninstallResult.Success)
+                    await ShowErrorAsync("UNINSTALL FAILED", uninstallResult.Error ?? "Unknown error");
                 return;
             }
 
@@ -850,6 +1023,9 @@ public class MainViewModel : ViewModelBase
                 }
             });
 
+            if (!result.Success)
+                await ShowErrorAsync("APPLY FAILED", result.Error ?? "Unknown error");
+
             // Refresh installed status
             await CheckPatchStatusAsync(GamePath);
         }
@@ -859,6 +1035,7 @@ public class MainViewModel : ViewModelBase
             {
                 SetOperationInProgress(false, $"Error applying patches: {ex.Message}");
             });
+            await ShowErrorAsync("APPLY FAILED", ex.Message);
         }
     }
 
@@ -868,6 +1045,15 @@ public class MainViewModel : ViewModelBase
         {
             StatusMessage = "Error: Invalid game executable path";
             return;
+        }
+
+        if (Dialogs != null)
+        {
+            var confirmed = await Dialogs.ConfirmAsync(
+                "UNINSTALL ALL",
+                "Remove every installed patch from the game?");
+            if (!confirmed)
+                return;
         }
 
         try
@@ -893,7 +1079,7 @@ public class MainViewModel : ViewModelBase
             UpdateSelectAllState();
 
             // Now apply (which will uninstall since nothing is checked)
-            await ApplyPatches();
+            await ApplyPatches(skipEmptyConfirm: true);
         }
         catch (Exception ex)
         {
@@ -946,6 +1132,9 @@ public class MainViewModel : ViewModelBase
                     SetOperationInProgress(false, $"Error: {result.Error}");
                 }
             });
+
+            if (!result.Success)
+                await ShowErrorAsync("LAUNCH FAILED", result.Error ?? "Unknown error");
         }
         catch (Exception ex)
         {
@@ -953,6 +1142,7 @@ public class MainViewModel : ViewModelBase
             {
                 SetOperationInProgress(false, $"Error launching game: {ex.Message}");
             });
+            await ShowErrorAsync("LAUNCH FAILED", ex.Message);
         }
     }
 
@@ -1007,7 +1197,12 @@ public class MainViewModel : ViewModelBase
                     Name = entry.Manifest.Name,
                     Version = entry.Manifest.Version,
                     Author = entry.Manifest.Author,
-                    Description = entry.Manifest.Description
+                    Description = entry.Manifest.Description,
+                    Requires = entry.Manifest.Requires.ToList(),
+                    Conflicts = entry.Manifest.Conflicts.ToList(),
+                    SupportedVersions = entry.Manifest.SupportedVersions.Keys.ToList(),
+                    Url = entry.Manifest.Url,
+                    License = entry.Manifest.License
                 }).ToList();
 
                 // Restore checked state from settings

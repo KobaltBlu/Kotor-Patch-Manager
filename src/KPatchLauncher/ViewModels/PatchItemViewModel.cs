@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+
 namespace KPatchLauncher.ViewModels;
 
 public class PatchItemViewModel : ViewModelBase
@@ -11,7 +13,10 @@ public class PatchItemViewModel : ViewModelBase
     private bool _isOrphaned = false;
     private int _displayOrder = 0;
     private bool _isCompatible = true;
+    private bool _isInstalled = false;
     private string _compatibilityStatus = string.Empty;
+    private string? _url;
+    private string? _license;
 
     public string Id
     {
@@ -62,6 +67,7 @@ public class PatchItemViewModel : ViewModelBase
         {
             if (SetProperty(ref _isChecked, value))
             {
+                NotifyStateChanged();
                 CheckedChanged?.Invoke(this, EventArgs.Empty);
             }
         }
@@ -72,7 +78,13 @@ public class PatchItemViewModel : ViewModelBase
     public bool IsOrphaned
     {
         get => _isOrphaned;
-        set => SetProperty(ref _isOrphaned, value);
+        set
+        {
+            if (SetProperty(ref _isOrphaned, value))
+            {
+                NotifyStateChanged();
+            }
+        }
     }
 
     public int DisplayOrder
@@ -84,7 +96,25 @@ public class PatchItemViewModel : ViewModelBase
     public bool IsCompatible
     {
         get => _isCompatible;
-        set => SetProperty(ref _isCompatible, value);
+        set
+        {
+            if (SetProperty(ref _isCompatible, value))
+            {
+                NotifyStateChanged();
+            }
+        }
+    }
+
+    public bool IsInstalled
+    {
+        get => _isInstalled;
+        set
+        {
+            if (SetProperty(ref _isInstalled, value))
+            {
+                NotifyStateChanged();
+            }
+        }
     }
 
     public string CompatibilityStatus
@@ -93,5 +123,84 @@ public class PatchItemViewModel : ViewModelBase
         set => SetProperty(ref _compatibilityStatus, value);
     }
 
+    public string? Url
+    {
+        get => _url;
+        set
+        {
+            if (SetProperty(ref _url, value))
+            {
+                OnPropertyChanged(nameof(HasUrl));
+            }
+        }
+    }
+
+    public string? License
+    {
+        get => _license;
+        set
+        {
+            if (SetProperty(ref _license, value))
+            {
+                OnPropertyChanged(nameof(HasLicense));
+            }
+        }
+    }
+
+    public List<string> Requires { get; set; } = new();
+    public List<string> Conflicts { get; set; } = new();
+    public List<string> SupportedVersions { get; set; } = new();
+
+    public bool HasRequires => Requires.Count > 0;
+    public bool HasConflicts => Conflicts.Count > 0;
+    public bool HasSupportedVersions => SupportedVersions.Count > 0;
+    public bool HasUrl => !string.IsNullOrWhiteSpace(Url);
+    public bool HasLicense => !string.IsNullOrWhiteSpace(License);
+
+    public string SupportedVersionsText => string.Join(", ", SupportedVersions);
+
     public string DisplayText => $"{Name} v{Version}";
+
+    public bool IsMuted => !IsCompatible && !IsOrphaned;
+
+    public bool IsPendingAdd => IsChecked && !IsInstalled && !IsOrphaned;
+    public bool IsPendingRemove => !IsChecked && IsInstalled;
+
+    public string StateLabel
+    {
+        get
+        {
+            if (IsOrphaned)
+                return "ORPHAN";
+            if (!IsCompatible)
+                return "INCOMPAT";
+            if (IsPendingAdd)
+                return "ADD";
+            if (IsPendingRemove)
+                return "REMOVE";
+            if (IsInstalled)
+                return "ON";
+            return string.Empty;
+        }
+    }
+
+    public bool HasStateLabel => !string.IsNullOrEmpty(StateLabel);
+
+    public bool IsStateOn => IsInstalled && IsChecked && IsCompatible && !IsOrphaned;
+    public bool IsStatePending => IsPendingAdd;
+    public bool IsStateWarn => IsPendingRemove || (!IsCompatible && !IsOrphaned);
+    public bool IsStateError => IsOrphaned;
+
+    private void NotifyStateChanged()
+    {
+        OnPropertyChanged(nameof(IsMuted));
+        OnPropertyChanged(nameof(IsPendingAdd));
+        OnPropertyChanged(nameof(IsPendingRemove));
+        OnPropertyChanged(nameof(StateLabel));
+        OnPropertyChanged(nameof(HasStateLabel));
+        OnPropertyChanged(nameof(IsStateOn));
+        OnPropertyChanged(nameof(IsStatePending));
+        OnPropertyChanged(nameof(IsStateWarn));
+        OnPropertyChanged(nameof(IsStateError));
+    }
 }
