@@ -1,0 +1,104 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "rebuild",
+      "type": "shell",
+      "command": "powershell.exe",
+      "args": [
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "${workspaceFolder}/.vscode/Invoke-MsBuild.ps1",
+        "-Action",
+        "rebuild"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "problemMatcher": "$msCompile",
+      "detail": "Rebuild solution Debug|x86 (KotorPatcher Win32 + C#)"
+    },
+    {
+      "label": "build",
+      "type": "shell",
+      "command": "powershell.exe",
+      "args": [
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "${workspaceFolder}/.vscode/Invoke-MsBuild.ps1",
+        "-Action",
+        "build"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "group": "build",
+      "problemMatcher": "$msCompile",
+      "detail": "Incremental build Debug|x86"
+    },
+    {
+      "label": "build-launcher",
+      "type": "shell",
+      "command": "dotnet",
+      "args": [
+        "build",
+        "src/KPatchLauncher/KPatchLauncher.csproj",
+        "-c",
+        "Debug"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "group": "build",
+      "problemMatcher": "$msCompile",
+      "detail": "Fast C#-only build of KPatchLauncher"
+    },
+    {
+      "label": "build-patcher",
+      "type": "shell",
+      "command": "powershell.exe",
+      "args": [
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "${workspaceFolder}/.vscode/Invoke-MsBuild.ps1",
+        "-Action",
+        "build-patcher"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "group": "build",
+      "problemMatcher": "$msCompile",
+      "detail": "Fast Win32 Debug build of KotorPatcher.dll"
+    },
+    {
+      "label": "create-patch",
+      "type": "shell",
+      "command": "cmd.exe",
+      "args": ["/d", "/c", "..\\create-patch.bat"],
+      "options": {
+        "cwd": "${workspaceFolder}/Patches/${input:patchDir}"
+      },
+      "problemMatcher": [],
+      "detail": "Build a .kpatch from a patch directory under Patches/"
+    }
+  ],
+  "inputs": [
+    {
+      "id": "patchDir",
+      "type": "promptString",
+      "description": "Patch folder name under Patches/ (e.g. AdditionalConsoleCommands)",
+      "default": "AdditionalConsoleCommands"
+    }
+  ]
+}

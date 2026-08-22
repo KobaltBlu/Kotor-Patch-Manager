@@ -52,6 +52,21 @@ This project has been built and configured with Visual Studio 2022, while there 
 
 With this configured you should be able to just run the launcher. You'll want to set the "Game" path to target your game executable (i.e. `swkotor.exe`). And set the "Patches" path to target the directory where you plan to store your `.kpatch` files.
 
+#### VS Code / Cursor
+You can use the same Windows toolchain from VS Code or Cursor without opening Visual Studio.
+
+**Prerequisites:** Visual Studio 2022 (or Build Tools) with the C++ v143 toolset and MSBuild, plus the .NET 8 SDK. When prompted, install the recommended workspace extensions (C#, .NET Runtime, C/C++).
+
+1. Open this repository folder in VS Code/Cursor.
+2. **Ctrl+Shift+B** runs the default `rebuild` task (`Debug|x86`), which builds `KotorPatcher` (Win32) and the C# projects into `bin\Debug\`.
+3. **F5** with **KPatchLauncher (Debug)** does an incremental `build`, then launches `bin\Debug\KPatchLauncher.exe` with working directory `bin\Debug` (so `KotorPatcher.dll` and `AddressDatabases` resolve correctly).
+
+After rebuilding `KotorPatcher.dll`, use **Apply** in the launcher again so the game directory gets the updated DLL.
+
+**Native DLL debugging:** use **KPatchLauncher (Debug + Attach Pause)** (sets `KPATCH_DEBUG_ATTACH=1`). After Launch, the injector pauses with the game suspended; attach with **Attach: KotorPatcher (game process)** (`cppvsdbg`), pick `swkotor.exe` / `swkotor2.exe`, set breakpoints in `src/KotorPatcher`, then press Enter in the terminal to resume. Point the debugger at `bin\Debug\KotorPatcher.pdb` (or copy the PDB beside the DLL in the game folder) if symbols do not load. Runtime logs still go to Sysinternals DebugView via `OutputDebugString`.
+
+Optional tasks: `build-launcher` / `build-patcher` for faster single-project iteration, and `create-patch` to run `Patches\create-patch.bat` for a chosen patch folder. You can override MSBuild by setting the `MSBUILD` environment variable to your `MSBuild.exe` path.
+
 To build the `.kpatch` file for any patch, simply open the directory (i.e. `cd Patches\AdditionalConsoleCommands`) in a batch-capable terminal (i.e. powershell or command-prompt), and run:
 ```
 ..\create-patch.bat

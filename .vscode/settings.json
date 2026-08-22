@@ -1,0 +1,20 @@
+{
+  "dotnet.defaultSolution": "KotorPatchManager.sln",
+  "C_Cpp.default.compilerPath": "cl.exe",
+  "C_Cpp.default.intelliSenseMode": "windows-msvc-x86",
+  "C_Cpp.default.cppStandard": "c++17",
+  "C_Cpp.default.cStandard": "c17",
+  "C_Cpp.default.includePath": [
+    "${workspaceFolder}/src/KotorPatcher/include",
+    "${workspaceFolder}/src/KotorPatcher/include/wrappers",
+    "${workspaceFolder}/src/KotorPatcher/external",
+    "${workspaceFolder}/lib",
+    "${workspaceFolder}/src/KotorPatcher/**"
+  ],
+  "C_Cpp.default.defines": [
+    "WIN32",
+    "_WINDOWS",
+    "_USRDLL",
+    "KOTORPATCHER_EXPORTS"
+  ]
+}

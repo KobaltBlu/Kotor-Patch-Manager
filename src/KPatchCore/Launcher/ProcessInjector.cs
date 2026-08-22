@@ -104,16 +104,16 @@ internal static class ProcessInjector
                         $"DLL injection failed: {injectResult.Error}");
                 }
 
-                // Debug mode: Set to 'true' if you want to hook a debugger to the process
-                if (false)
+                // Pause after inject when KPATCH_DEBUG_ATTACH=1 so a native debugger can attach
+                if (Environment.GetEnvironmentVariable("KPATCH_DEBUG_ATTACH") == "1")
                 {
                     Console.WriteLine("========================================");
-                    Console.WriteLine("DEBUG MODE ENABLED");
+                    Console.WriteLine("DEBUG MODE ENABLED (KPATCH_DEBUG_ATTACH=1)");
                     Console.WriteLine($"Game process created (PID: {pi.dwProcessId})");
                     Console.WriteLine("Process is SUSPENDED - DLL has been injected");
                     Console.WriteLine("");
                     Console.WriteLine("You can now:");
-                    Console.WriteLine("  1. Attach your debugger (Cheat Engine, x32dbg, etc.)");
+                    Console.WriteLine("  1. Attach your debugger (VS Code cppvsdbg, x32dbg, etc.)");
                     Console.WriteLine("  2. Set breakpoints in KotorPatcher.dll or game code");
                     Console.WriteLine("  3. Press ENTER to resume the game");
                     Console.WriteLine("========================================");
