@@ -1,13 +1,22 @@
 [patch]
 id = "level-up-limit"
 name = "Max Level Increase"
-version = "2.0.1"
+version = "3.0.0"
 author = "Arniel_Stanislaus aka LanguageWriter123 (with revisions from Lane)"
-description = "Sets the maximum level in kotor 1"
+description = "Configurable maximum character level for KotOR 1"
 
 requires = []
-
 conflicts = []
+tags = ["gameplay", "kotor1"]
+
+[[patch.options]]
+id = "max_level"
+type = "integer"
+default = 50
+min = 21
+max = 100
+display_name = "Maximum Level"
+description = "Maximum character level. Values above 80 may have UI issues."
 
 [patch.supported_versions]
 kotor1_gog_103 = "9C10E0450A6EECA417E036E3CDE7474FED1F0A92AAB018446D156944DEA91435"

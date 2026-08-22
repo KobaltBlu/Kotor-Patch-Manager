@@ -1,6 +1,43 @@
+using System.Collections.ObjectModel;
 using System.Collections.Generic;
 
 namespace KPatchLauncher.ViewModels;
+
+public sealed class PatchOptionItemViewModel : ViewModelBase
+{
+    private decimal _value;
+
+    public PatchOptionItemViewModel(string id, string displayName, string description, int value, int? min, int? max)
+    {
+        Id = id;
+        DisplayName = displayName;
+        Description = description;
+        Min = min ?? int.MinValue;
+        Max = max ?? int.MaxValue;
+        _value = value;
+    }
+
+    public string Id { get; }
+    public string DisplayName { get; }
+    public string Description { get; }
+    public decimal Min { get; }
+    public decimal Max { get; }
+
+    public decimal Value
+    {
+        get => _value;
+        set
+        {
+            var clamped = Math.Clamp(value, Min, Max);
+            if (SetProperty(ref _value, clamped))
+                ValueChanged?.Invoke(this, EventArgs.Empty);
+        }
+    }
+
+    public int IntValue => (int)Value;
+
+    public event EventHandler? ValueChanged;
+}
 
 public class PatchItemViewModel : ViewModelBase
 {
@@ -17,6 +54,7 @@ public class PatchItemViewModel : ViewModelBase
     private string _compatibilityStatus = string.Empty;
     private string? _url;
     private string? _license;
+    private bool _hasAdditionalFiles;
 
     public string Id
     {
@@ -30,9 +68,7 @@ public class PatchItemViewModel : ViewModelBase
         set
         {
             if (SetProperty(ref _name, value))
-            {
                 OnPropertyChanged(nameof(DisplayText));
-            }
         }
     }
 
@@ -42,9 +78,7 @@ public class PatchItemViewModel : ViewModelBase
         set
         {
             if (SetProperty(ref _version, value))
-            {
                 OnPropertyChanged(nameof(DisplayText));
-            }
         }
     }
 
@@ -81,9 +115,7 @@ public class PatchItemViewModel : ViewModelBase
         set
         {
             if (SetProperty(ref _isOrphaned, value))
-            {
                 NotifyStateChanged();
-            }
         }
     }
 
@@ -99,9 +131,7 @@ public class PatchItemViewModel : ViewModelBase
         set
         {
             if (SetProperty(ref _isCompatible, value))
-            {
                 NotifyStateChanged();
-            }
         }
     }
 
@@ -111,9 +141,7 @@ public class PatchItemViewModel : ViewModelBase
         set
         {
             if (SetProperty(ref _isInstalled, value))
-            {
                 NotifyStateChanged();
-            }
         }
     }
 
@@ -129,9 +157,7 @@ public class PatchItemViewModel : ViewModelBase
         set
         {
             if (SetProperty(ref _url, value))
-            {
                 OnPropertyChanged(nameof(HasUrl));
-            }
         }
     }
 
@@ -141,15 +167,30 @@ public class PatchItemViewModel : ViewModelBase
         set
         {
             if (SetProperty(ref _license, value))
-            {
                 OnPropertyChanged(nameof(HasLicense));
-            }
         }
     }
+
+    public bool HasAdditionalFiles
+    {
+        get => _hasAdditionalFiles;
+        set
+        {
+            if (SetProperty(ref _hasAdditionalFiles, value))
+                OnPropertyChanged(nameof(AdditionalFilesNote));
+        }
+    }
+
+    public string AdditionalFilesNote =>
+        HasAdditionalFiles
+            ? "This patch ships additional game files. Re-apply after updating the .kpatch to refresh them."
+            : string.Empty;
 
     public List<string> Requires { get; set; } = new();
     public List<string> Conflicts { get; set; } = new();
     public List<string> SupportedVersions { get; set; } = new();
+    public List<string> Tags { get; set; } = new();
+    public ObservableCollection<PatchOptionItemViewModel> Options { get; } = new();
 
     public bool HasRequires => Requires.Count > 0;
     public bool HasConflicts => Conflicts.Count > 0;
@@ -157,7 +198,9 @@ public class PatchItemViewModel : ViewModelBase
     public bool HasSupportedVersions => SupportedVersions.Count > 0;
     public bool HasUrl => !string.IsNullOrWhiteSpace(Url);
     public bool HasLicense => !string.IsNullOrWhiteSpace(License);
-
+    public bool HasOptions => Options.Count > 0;
+    public bool HasTags => Tags.Count > 0;
+    public string TagsText => string.Join(" · ", Tags);
     public string SupportedVersionsText => string.Join(", ", SupportedVersions);
 
     public string DisplayText => $"{Name} v{Version}";

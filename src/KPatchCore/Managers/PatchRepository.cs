@@ -36,6 +36,11 @@ public class PatchRepository
         /// Whether this patch is currently loaded
         /// </summary>
         public bool IsLoaded { get; set; }
+
+        /// <summary>
+        /// True when the .kpatch archive contains an additional/ folder.
+        /// </summary>
+        public bool HasAdditionalFiles { get; init; }
     }
 
     /// <summary>
@@ -136,6 +141,10 @@ public class PatchRepository
                 .Where(e => e.FullName.EndsWith("hooks.toml", StringComparison.OrdinalIgnoreCase))
                 .ToList();
 
+            var hasAdditionalFiles = archive.Entries.Any(e =>
+                e.FullName.StartsWith("additional/", StringComparison.OrdinalIgnoreCase) ||
+                e.FullName.StartsWith("additional\\", StringComparison.OrdinalIgnoreCase));
+
             if (hooksEntries.Count == 0)
             {
                 // No hooks files - could be DLL-only patch
@@ -144,7 +153,8 @@ public class PatchRepository
                     Manifest = manifest,
                     KPatchPath = kpatchPath,
                     Hooks = new List<Hook>(), // Empty hooks list
-                    IsLoaded = false
+                    IsLoaded = false,
+                    HasAdditionalFiles = hasAdditionalFiles
                 };
 
                 return PatchResult<PatchEntry>.Ok(patchEntry, $"Loaded patch: {manifest.Id} (no hooks)");
@@ -196,7 +206,8 @@ public class PatchRepository
                 Manifest = manifest,
                 KPatchPath = kpatchPath,
                 Hooks = hooks,
-                IsLoaded = false
+                IsLoaded = false,
+                HasAdditionalFiles = hasAdditionalFiles
             };
 
             return PatchResult<PatchEntry>.Ok(entry, $"Loaded patch: {manifest.Id}");

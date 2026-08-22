@@ -71,6 +71,27 @@
                                Foreground="{DynamicResource AccentBrush}"
                                VerticalAlignment="Center"/>
                 </StackPanel>
+                <StackPanel Grid.Column="1"
+                            Orientation="Horizontal"
+                            HorizontalAlignment="Right"
+                            Spacing="6"
+                            VerticalAlignment="Center"
+                            Margin="0,0,8,0">
+                    <Button Content="K1"
+                            Classes="icon"
+                            Width="36"
+                            Command="{Binding SelectKotor1Command}"
+                            Classes.pending="{Binding IsKotor1Target}"
+                            IsVisible="{Binding HasKotor1Memory}"
+                            ToolTip.Tip="Switch to remembered KotOR 1"/>
+                    <Button Content="K2"
+                            Classes="icon"
+                            Width="36"
+                            Command="{Binding SelectKotor2Command}"
+                            Classes.pending="{Binding IsKotor2Target}"
+                            IsVisible="{Binding HasKotor2Memory}"
+                            ToolTip.Tip="Switch to remembered KotOR 2"/>
+                </StackPanel>
                 <Border Grid.Column="2"
                         Classes="version-badge"
                         IsVisible="{Binding !IsFirstRun}">
@@ -101,11 +122,35 @@
                                Subtitle="{Binding KotorVersion, StringFormat=Detected: {0}}"
                                Margin="16,8,16,0">
                 <controls:HudPanel.HeaderContent>
-                    <Button Content="REFRESH"
-                            Command="{Binding RefreshCommand}"
-                            MinWidth="96"
-                            MinHeight="28"
-                            Padding="12,4"/>
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <ComboBox ItemsSource="{Binding AvailableLoadouts}"
+                                  SelectedItem="{Binding ActiveLoadout}"
+                                  Width="160"
+                                  MinHeight="28"
+                                  PlaceholderText="Loadout"
+                                  ToolTip.Tip="Named patch loadout">
+                            <ComboBox.ItemTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding Name}"/>
+                                </DataTemplate>
+                            </ComboBox.ItemTemplate>
+                        </ComboBox>
+                        <TextBox Text="{Binding NewLoadoutName}"
+                                 Width="110"
+                                 Watermark="Name"
+                                 MinHeight="28"/>
+                        <Button Content="SAVE"
+                                Command="{Binding SaveLoadoutCommand}"
+                                MinWidth="64"
+                                MinHeight="28"
+                                Padding="8,4"
+                                ToolTip.Tip="Save current selection as loadout"/>
+                        <Button Content="REFRESH"
+                                Command="{Binding RefreshCommand}"
+                                MinWidth="88"
+                                MinHeight="28"
+                                Padding="12,4"/>
+                    </StackPanel>
                 </controls:HudPanel.HeaderContent>
                 <Grid ColumnDefinitions="*,12,*">
                     <controls:PathField Label="GAME"
@@ -174,7 +219,7 @@
                                      Watermark="Search name, author, id"
                                      Margin="0,0,0,8"/>
                             <Grid DockPanel.Dock="Top"
-                                  ColumnDefinitions="*,Auto"
+                                  ColumnDefinitions="*,Auto,Auto"
                                   Margin="0,0,0,8">
                                 <CheckBox IsThreeState="True"
                                           IsChecked="{Binding SelectAllPatches}"
@@ -182,10 +227,29 @@
                                     <TextBlock Text="Select All"
                                                Foreground="{DynamicResource PrimaryBrush}"/>
                                 </CheckBox>
-                                <CheckBox Grid.Column="1"
+                                <ComboBox Grid.Column="1"
+                                          SelectedItem="{Binding LibrarySortMode}"
+                                          Width="110"
+                                          Margin="0,0,8,0"
+                                          MinHeight="28"
+                                          ToolTip.Tip="Sort library">
+                                    <ComboBox.Items>
+                                        <x:String>name</x:String>
+                                        <x:String>author</x:String>
+                                        <x:String>installed</x:String>
+                                        <x:String>pending</x:String>
+                                    </ComboBox.Items>
+                                </ComboBox>
+                                <CheckBox Grid.Column="2"
                                           IsChecked="{Binding ShowIncompatible}"
                                           Content="Show incompatible"/>
                             </Grid>
+                            <TextBlock DockPanel.Dock="Top"
+                                       Text="{Binding EmptyLibraryMessage}"
+                                       Classes="caption"
+                                       TextWrapping="Wrap"
+                                       Margin="0,0,0,8"
+                                       IsVisible="{Binding HasEmptyLibrary}"/>
                             <ListBox ItemsSource="{Binding VisiblePatches}"
                                      SelectedItem="{Binding SelectedPatch}"
                                      ScrollViewer.HorizontalScrollBarVisibility="Disabled">
@@ -238,6 +302,11 @@
                                                                TextWrapping="Wrap"
                                                                Foreground="{DynamicResource AccentBrush}"/>
                                                 </StackPanel>
+                                                <TextBlock Text="{Binding SelectedPatch.TagsText}"
+                                                           Classes="mono"
+                                                           FontSize="11"
+                                                           Foreground="{DynamicResource CaptionBrush}"
+                                                           IsVisible="{Binding SelectedPatch.HasTags}"/>
                                                 <Grid ColumnDefinitions="*,*" ColumnSpacing="16">
                                                     <StackPanel>
                                                         <TextBlock Text="VERSION" Classes="caption"/>
@@ -263,7 +332,42 @@
                                                             Command="{Binding OpenUrlCommand}"
                                                             CommandParameter="{Binding SelectedPatch.Url}"/>
                                                 </StackPanel>
+                                                <TextBlock Text="{Binding SelectedPatch.AdditionalFilesNote}"
+                                                           TextWrapping="Wrap"
+                                                           FontSize="12"
+                                                           Foreground="{DynamicResource WarningBrush}"
+                                                           IsVisible="{Binding SelectedPatch.HasAdditionalFiles}"/>
                                             </StackPanel>
+                                        </Border>
+                                    </StackPanel>
+
+                                    <!-- Options -->
+                                    <StackPanel Classes="hud-section"
+                                                IsVisible="{Binding SelectedPatch.HasOptions}">
+                                        <TextBlock Text="OPTIONS" Classes="section-title"/>
+                                        <Border Classes="section-rule"/>
+                                        <Border Classes="section-inset">
+                                            <ItemsControl ItemsSource="{Binding SelectedPatch.Options}">
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate x:DataType="vm:PatchOptionItemViewModel">
+                                                        <Grid ColumnDefinitions="*,Auto" Margin="0,0,0,8">
+                                                            <StackPanel>
+                                                                <TextBlock Text="{Binding DisplayName}" Classes="caption"/>
+                                                                <TextBlock Text="{Binding Description}"
+                                                                           TextWrapping="Wrap"
+                                                                           FontSize="12"
+                                                                           Opacity="0.8"/>
+                                                            </StackPanel>
+                                                            <NumericUpDown Grid.Column="1"
+                                                                           Value="{Binding Value}"
+                                                                           Minimum="{Binding Min}"
+                                                                           Maximum="{Binding Max}"
+                                                                           Width="100"
+                                                                           FormatString="0"/>
+                                                        </Grid>
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
                                         </Border>
                                     </StackPanel>
 
@@ -378,6 +482,38 @@
                                  IsIndeterminate="{Binding IsOperationInProgress}"
                                  Height="6"
                                  Margin="0,0,0,10"/>
+                    <Border DockPanel.Dock="Top"
+                            Classes="section-inset"
+                            Margin="0,0,0,10"
+                            BorderBrush="{DynamicResource PrimaryBrush}">
+                        <Grid ColumnDefinitions="*,Auto">
+                            <StackPanel>
+                                <TextBlock Text="HEALTH" Classes="caption"/>
+                                <TextBlock Text="{Binding HealthSummary}"
+                                           Classes="mono"
+                                           FontSize="12"
+                                           Foreground="{DynamicResource SuccessBrush}"
+                                           IsVisible="{Binding HealthOk}"/>
+                                <TextBlock Text="{Binding HealthSummary}"
+                                           Classes="mono"
+                                           FontSize="12"
+                                           Foreground="{DynamicResource WarningBrush}"
+                                           IsVisible="{Binding !HealthOk}"/>
+                                <TextBlock Text="{Binding HealthDetail}"
+                                           TextWrapping="Wrap"
+                                           FontSize="11"
+                                           Opacity="0.85"
+                                           IsVisible="{Binding HasHealthDetail}"/>
+                            </StackPanel>
+                            <Button Grid.Column="1"
+                                    Content="REPAIR"
+                                    Command="{Binding RepairStagingCommand}"
+                                    MinWidth="88"
+                                    MinHeight="28"
+                                    VerticalAlignment="Center"
+                                    ToolTip.Tip="Re-apply current selection to repair staging"/>
+                        </Grid>
+                    </Border>
                     <StackPanel DockPanel.Dock="Bottom"
                                 Orientation="Horizontal"
                                 Spacing="12"

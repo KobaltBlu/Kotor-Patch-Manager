@@ -21,7 +21,7 @@ using KPatchLauncher.Models;
 
 namespace KPatchLauncher.ViewModels;
 
-public class MainViewModel : ViewModelBase
+public partial class MainViewModel : ViewModelBase
 {
     private string _gamePath = string.Empty;
     private string _patchesPath = string.Empty;
@@ -76,6 +76,8 @@ public class MainViewModel : ViewModelBase
         LaunchGameCommand = new SimpleCommand(async () => await LaunchGame(), () => HasValidGamePath);
         SelectPatchCommand = new SimpleCommand(p => SelectPatchById(p as string));
         OpenUrlCommand = new SimpleCommand(p => OpenUrl(p as string));
+
+        InitSystemsConsole();
 
         // Load patches if path is set
         if (!string.IsNullOrWhiteSpace(_patchesPath))
@@ -797,10 +799,11 @@ public class MainViewModel : ViewModelBase
                 p.Name.Contains(term, StringComparison.OrdinalIgnoreCase)
                 || p.Author.Contains(term, StringComparison.OrdinalIgnoreCase)
                 || p.Id.Contains(term, StringComparison.OrdinalIgnoreCase)
-                || p.DisplayText.Contains(term, StringComparison.OrdinalIgnoreCase));
+                || p.DisplayText.Contains(term, StringComparison.OrdinalIgnoreCase)
+                || p.TagsText.Contains(term, StringComparison.OrdinalIgnoreCase));
         }
 
-        var desired = query.ToList();
+        var desired = ApplyLibrarySort(query).ToList();
         var desiredSet = new HashSet<PatchItemViewModel>(desired);
 
         for (var i = VisiblePatches.Count - 1; i >= 0; i--)
@@ -852,6 +855,7 @@ public class MainViewModel : ViewModelBase
         OnPropertyChanged(nameof(PendingChangesCount));
         OnPropertyChanged(nameof(PendingChangesMessage));
         OnPropertyChanged(nameof(HasPendingChanges));
+        RefreshHealthStatus();
     }
 
     private void UpdateInstallStates()
@@ -1004,7 +1008,8 @@ public class MainViewModel : ViewModelBase
                 CreateBackup = true,
                 PatcherDllPath = File.Exists(patcherDllPath) ? patcherDllPath : null,
                 PatcherSoPath = File.Exists(patcherSoPath) ? patcherSoPath : null,
-                ProxyDllPath = File.Exists(proxyDllPath) ? proxyDllPath : null
+                ProxyDllPath = File.Exists(proxyDllPath) ? proxyDllPath : null,
+                PatchOptionValues = CaptureOptionValues()
             };
 
             // Run on background thread
@@ -1096,6 +1101,15 @@ public class MainViewModel : ViewModelBase
         {
             StatusMessage = "Error: Invalid game executable path";
             return;
+        }
+
+        if (HasPendingChanges && Dialogs != null)
+        {
+            var confirmed = await Dialogs.ConfirmAsync(
+                "PENDING CHANGES",
+                "You have unapplied patch changes. Launch anyway without Apply?");
+            if (!confirmed)
+                return;
         }
 
         try
@@ -1191,18 +1205,38 @@ public class MainViewModel : ViewModelBase
                 // that gets superseded never empties the list it is no longer filling.
                 ClearPatchViewModels();
 
-                var patchViewModels = allPatches.Values.Select(entry => new PatchItemViewModel
+                var patchViewModels = allPatches.Values.Select(entry =>
                 {
-                    Id = entry.Manifest.Id,
-                    Name = entry.Manifest.Name,
-                    Version = entry.Manifest.Version,
-                    Author = entry.Manifest.Author,
-                    Description = entry.Manifest.Description,
-                    Requires = entry.Manifest.Requires.ToList(),
-                    Conflicts = entry.Manifest.Conflicts.ToList(),
-                    SupportedVersions = entry.Manifest.SupportedVersions.Keys.ToList(),
-                    Url = entry.Manifest.Url,
-                    License = entry.Manifest.License
+                    var vm = new PatchItemViewModel
+                    {
+                        Id = entry.Manifest.Id,
+                        Name = entry.Manifest.Name,
+                        Version = entry.Manifest.Version,
+                        Author = entry.Manifest.Author,
+                        Description = entry.Manifest.Description,
+                        Requires = entry.Manifest.Requires.ToList(),
+                        Conflicts = entry.Manifest.Conflicts.ToList(),
+                        SupportedVersions = entry.Manifest.SupportedVersions.Keys.ToList(),
+                        Tags = entry.Manifest.Tags.ToList(),
+                        Url = entry.Manifest.Url,
+                        License = entry.Manifest.License,
+                        HasAdditionalFiles = entry.HasAdditionalFiles
+                    };
+
+                    foreach (var opt in entry.Manifest.Options)
+                    {
+                        var optVm = new PatchOptionItemViewModel(
+                            opt.Id,
+                            opt.DisplayName,
+                            opt.Description,
+                            opt.Default,
+                            opt.Min,
+                            opt.Max);
+                        optVm.ValueChanged += (_, _) => UpdatePendingChanges();
+                        vm.Options.Add(optVm);
+                    }
+
+                    return vm;
                 }).ToList();
 
                 // Restore checked state from settings
@@ -1218,6 +1252,8 @@ public class MainViewModel : ViewModelBase
                 // Update compatibility status for loaded patches
                 UpdatePatchCompatibility();
                 UpdateSelectAllState();
+                RefreshLoadoutList();
+                OnPropertyChanged(nameof(HasEmptyLibrary));
 
                 SetOperationInProgress(false, $"Loaded {patchViewModels.Count} patches from {Path.GetFileName(directory)}");
             });
@@ -1343,6 +1379,11 @@ public class MainViewModel : ViewModelBase
             {
                 app.LoadTheme(v.Title);
             }
+
+            RememberCurrentTarget();
+            RefreshLoadoutList();
+            OnPropertyChanged(nameof(IsKotor1Target));
+            OnPropertyChanged(nameof(IsKotor2Target));
         }
         else
         {
@@ -1360,6 +1401,9 @@ public class MainViewModel : ViewModelBase
         {
             app.LoadTheme(KPatchCore.Models.GameTitle.KOTOR1);
         }
+
+        OnPropertyChanged(nameof(IsKotor1Target));
+        OnPropertyChanged(nameof(IsKotor2Target));
     }
 
     private void UpdatePatchCompatibility()

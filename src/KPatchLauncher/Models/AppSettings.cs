@@ -51,6 +51,26 @@ public class AppSettings
     public bool ShowIncompatible { get; set; }
 
     /// <summary>
+    /// Remembered KotOR 1 game/patches paths.
+    /// </summary>
+    public GameTargetMemory? Kotor1Target { get; set; }
+
+    /// <summary>
+    /// Remembered KotOR 2 game/patches paths.
+    /// </summary>
+    public GameTargetMemory? Kotor2Target { get; set; }
+
+    /// <summary>
+    /// Active loadout id for the current session.
+    /// </summary>
+    public string? ActiveLoadoutId { get; set; }
+
+    /// <summary>
+    /// Library sort mode: name, author, installed, pending
+    /// </summary>
+    public string LibrarySortMode { get; set; } = "name";
+
+    /// <summary>
     /// Legacy property for backwards compatibility (TODO: Remove after migration)
     /// </summary>
     [Obsolete("Use CheckedPatchIds instead")]

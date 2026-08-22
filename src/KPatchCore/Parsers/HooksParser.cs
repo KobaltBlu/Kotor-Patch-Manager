@@ -134,9 +134,11 @@ public static class HooksParser
 
                 // Parse replacement_bytes (required for Simple and Replace hooks)
                 byte[]? replacementBytes = null;
-                if (TryGetByteArray(hookTable, "replacement_bytes", out var repBytes))
+                string?[]? replacementTemplates = null;
+                if (TryGetByteOrTemplateArray(hookTable, "replacement_bytes", out var repBytes, out var repTemplates))
                 {
                     replacementBytes = repBytes;
+                    replacementTemplates = repTemplates;
                 }
 
                 var preserveRegisters = TryGetBool(hookTable, "preserve_registers") ?? true;
@@ -164,6 +166,7 @@ public static class HooksParser
                     Function = function,
                     OriginalBytes = originalBytes,
                     ReplacementBytes = replacementBytes,
+                    ReplacementTemplates = replacementTemplates,
                     Type = type,
                     PreserveRegisters = preserveRegisters,
                     PreserveFlags = preserveFlags,
@@ -235,31 +238,75 @@ public static class HooksParser
 
     private static bool TryGetByteArray(TomlTable table, string key, out byte[] value)
     {
+        return TryGetByteOrTemplateArray(table, key, out value, out _);
+    }
+
+    /// <summary>
+    /// Parses a byte array that may contain "{{option_id}}" template strings.
+    /// Template slots are stored as 0 in <paramref name="bytes"/> with the option id in <paramref name="templates"/>.
+    /// </summary>
+    private static bool TryGetByteOrTemplateArray(
+        TomlTable table,
+        string key,
+        out byte[] bytes,
+        out string?[]? templates)
+    {
+        templates = null;
         if (table.TryGetValue(key, out var obj) && obj is TomlArray array)
         {
-            var bytes = new List<byte>();
+            var byteList = new List<byte>();
+            var templateList = new List<string?>();
+            var hasTemplate = false;
+
             foreach (var item in array)
             {
                 if (item is long longVal && longVal >= 0 && longVal <= 255)
                 {
-                    bytes.Add((byte)longVal);
+                    byteList.Add((byte)longVal);
+                    templateList.Add(null);
                 }
                 else if (item is int intVal && intVal >= 0 && intVal <= 255)
                 {
-                    bytes.Add((byte)intVal);
+                    byteList.Add((byte)intVal);
+                    templateList.Add(null);
+                }
+                else if (item is string str)
+                {
+                    var trimmed = str.Trim();
+                    if (trimmed.StartsWith("{{", StringComparison.Ordinal) &&
+                        trimmed.EndsWith("}}", StringComparison.Ordinal) &&
+                        trimmed.Length > 4)
+                    {
+                        var optionId = trimmed[2..^2].Trim();
+                        if (string.IsNullOrWhiteSpace(optionId))
+                        {
+                            bytes = Array.Empty<byte>();
+                            return false;
+                        }
+
+                        byteList.Add(0);
+                        templateList.Add(optionId);
+                        hasTemplate = true;
+                    }
+                    else
+                    {
+                        bytes = Array.Empty<byte>();
+                        return false;
+                    }
                 }
                 else
                 {
-                    value = Array.Empty<byte>();
+                    bytes = Array.Empty<byte>();
                     return false;
                 }
             }
 
-            value = bytes.ToArray();
-            return bytes.Count > 0;
+            bytes = byteList.ToArray();
+            templates = hasTemplate ? templateList.ToArray() : null;
+            return bytes.Length > 0;
         }
 
-        value = Array.Empty<byte>();
+        bytes = Array.Empty<byte>();
         return false;
     }
 
