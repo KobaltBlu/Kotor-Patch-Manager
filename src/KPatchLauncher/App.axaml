@@ -9,6 +9,7 @@
             <FontFamily x:Key="HudMonoFont">avares://KPatchLauncher/Assets/Fonts/ShareTechMono-Regular.ttf#Share Tech Mono</FontFamily>
             <ResourceDictionary.MergedDictionaries>
                 <ResourceInclude Source="avares://KPatchLauncher/Themes/Kotor1Theme.axaml"/>
+                <ResourceInclude Source="avares://KPatchLauncher/Themes/HudScrollBar.axaml"/>
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
     </Application.Resources>

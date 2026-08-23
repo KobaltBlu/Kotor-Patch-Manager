@@ -269,14 +269,13 @@
     <Style Selector="ScrollViewer">
         <Setter Property="Background" Value="Transparent"/>
     </Style>
-    <Style Selector="ScrollBar">
-        <Setter Property="Background" Value="{DynamicResource PanelInsetBrush}"/>
+    <Style Selector="ScrollBar:vertical">
+        <Setter Property="MinWidth" Value="{DynamicResource ScrollBarSize}"/>
+        <Setter Property="Width" Value="{DynamicResource ScrollBarSize}"/>
     </Style>
-    <Style Selector="ScrollBar Thumb">
-        <Setter Property="Background" Value="{DynamicResource PrimaryBrush}"/>
-    </Style>
-    <Style Selector="ScrollBar:pointerover Thumb">
-        <Setter Property="Background" Value="{DynamicResource AccentBrush}"/>
+    <Style Selector="ScrollBar:horizontal">
+        <Setter Property="MinHeight" Value="{DynamicResource ScrollBarSize}"/>
+        <Setter Property="Height" Value="{DynamicResource ScrollBarSize}"/>
     </Style>
 
     <Style Selector="ProgressBar">

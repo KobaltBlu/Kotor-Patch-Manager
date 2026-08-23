@@ -41,4 +41,33 @@
 
     <CornerRadius x:Key="HudCornerRadius">2</CornerRadius>
     <x:Double x:Key="HudBracketLength">16</x:Double>
+
+    <!-- Fluent ScrollBar resources remapped to HUD palette -->
+    <SolidColorBrush x:Key="ScrollBarBackground" Color="{StaticResource PanelInsetColor}"/>
+    <SolidColorBrush x:Key="ScrollBarBackgroundPointerOver" Color="{StaticResource PanelInsetColor}"/>
+    <SolidColorBrush x:Key="ScrollBarBorderBrush" Color="{StaticResource PrimaryColor}"/>
+    <SolidColorBrush x:Key="ScrollBarForeground" Color="{StaticResource PrimaryColor}"/>
+    <SolidColorBrush x:Key="ScrollBarTrackFill" Color="{StaticResource PanelInsetColor}"/>
+    <SolidColorBrush x:Key="ScrollBarTrackFillPointerOver" Color="{StaticResource PanelInsetColor}"/>
+    <SolidColorBrush x:Key="ScrollBarTrackStroke" Color="{StaticResource GridLineColor}"/>
+    <SolidColorBrush x:Key="ScrollBarTrackStrokePointerOver" Color="{StaticResource PrimaryColor}"/>
+    <Color x:Key="ScrollBarThumbBackgroundColor">#1AB08A</Color>
+    <SolidColorBrush x:Key="ScrollBarThumbFill" Color="{StaticResource PrimaryColor}"/>
+    <SolidColorBrush x:Key="ScrollBarThumbFillPointerOver" Color="{StaticResource AccentColor}"/>
+    <SolidColorBrush x:Key="ScrollBarThumbFillPressed" Color="{StaticResource AccentColor}"/>
+    <SolidColorBrush x:Key="ScrollBarThumbFillDisabled" Color="{StaticResource GridLineColor}"/>
+    <SolidColorBrush x:Key="ScrollBarPanningThumbBackground" Color="{StaticResource PrimaryColor}"/>
+    <Color x:Key="ScrollBarPanningThumbBackgroundColor">#1AB08A</Color>
+    <SolidColorBrush x:Key="ScrollBarButtonBackground" Color="{StaticResource PanelFillColor}"/>
+    <SolidColorBrush x:Key="ScrollBarButtonBackgroundPointerOver" Color="{StaticResource SelectionBackgroundColor}"/>
+    <SolidColorBrush x:Key="ScrollBarButtonBackgroundPressed" Color="{StaticResource HoverBackgroundColor}"/>
+    <SolidColorBrush x:Key="ScrollBarButtonBackgroundDisabled" Color="{StaticResource PanelInsetColor}"/>
+    <SolidColorBrush x:Key="ScrollBarButtonBorderBrush" Color="{StaticResource PrimaryColor}"/>
+    <SolidColorBrush x:Key="ScrollBarButtonBorderBrushPointerOver" Color="{StaticResource AccentColor}"/>
+    <SolidColorBrush x:Key="ScrollBarButtonBorderBrushPressed" Color="{StaticResource AccentColor}"/>
+    <SolidColorBrush x:Key="ScrollBarButtonBorderBrushDisabled" Color="{StaticResource GridLineColor}"/>
+    <SolidColorBrush x:Key="ScrollBarButtonArrowForeground" Color="{StaticResource PrimaryColor}"/>
+    <SolidColorBrush x:Key="ScrollBarButtonArrowForegroundPointerOver" Color="{StaticResource AccentColor}"/>
+    <SolidColorBrush x:Key="ScrollBarButtonArrowForegroundPressed" Color="{StaticResource AccentColor}"/>
+    <SolidColorBrush x:Key="ScrollBarButtonArrowForegroundDisabled" Color="{StaticResource GridLineColor}"/>
 </ResourceDictionary>

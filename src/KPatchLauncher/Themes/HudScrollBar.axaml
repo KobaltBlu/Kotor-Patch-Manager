@@ -1,0 +1,9 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- Thicker idle track; identity scales prevent Fluent expand-on-hover. -->
+    <x:Double x:Key="ScrollBarSize">14</x:Double>
+    <ScaleTransform x:Key="VerticalSmallScrollThumbScaleTransform" ScaleX="1" ScaleY="1"/>
+    <ScaleTransform x:Key="HorizontalSmallScrollThumbScaleTransform" ScaleX="1" ScaleY="1"/>
+
+</ResourceDictionary>
