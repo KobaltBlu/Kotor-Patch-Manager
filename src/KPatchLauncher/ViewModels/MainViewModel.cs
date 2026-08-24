@@ -45,6 +45,7 @@ public partial class MainViewModel : ViewModelBase
     private string _searchText = string.Empty;
     private bool _showIncompatible;
     private string _dependencyWarning = string.Empty;
+    private readonly List<string> _preferredInstallOrder = new();
 
     public MainViewModel()
     {
@@ -68,9 +69,10 @@ public partial class MainViewModel : ViewModelBase
 
         BrowseGameCommand = new SimpleCommand(async () => await BrowseGame(), () => CanEditPaths);
         BrowsePatchesCommand = new SimpleCommand(async () => await BrowsePatches(), () => CanEditPaths);
+        AddPatchCommand = new SimpleCommand(async () => await AddPatchViaPickerAsync(), () => CanEditPaths);
         RefreshCommand = new SimpleCommand(async () => await Refresh(), () => CanEditPaths);
-        MoveUpCommand = new SimpleCommand(p => MovePatch(p, -1));
-        MoveDownCommand = new SimpleCommand(p => MovePatch(p, 1));
+        MoveUpCommand = new SimpleCommand(p => MovePatch(p, -1), p => CanMovePatch(p, -1));
+        MoveDownCommand = new SimpleCommand(p => MovePatch(p, 1), p => CanMovePatch(p, 1));
         ApplyPatchesCommand = new SimpleCommand(async () => await ApplyPatches(), () => CanEditPaths && HasValidGamePath);
         UninstallAllCommand = new SimpleCommand(async () => await UninstallAll(), () => HasInstalledPatches && CanEditPaths);
         LaunchGameCommand = new SimpleCommand(async () => await LaunchGame(), () => HasValidGamePath);
@@ -176,6 +178,7 @@ public partial class MainViewModel : ViewModelBase
             if (SetProperty(ref _selectedPatch, value))
             {
                 UpdateDependencyWarning();
+                RaiseMoveCommandsCanExecute();
             }
         }
     }
@@ -350,6 +353,7 @@ public partial class MainViewModel : ViewModelBase
 
     public ICommand BrowseGameCommand { get; }
     public ICommand BrowsePatchesCommand { get; }
+    public ICommand AddPatchCommand { get; }
     public ICommand RefreshCommand { get; }
     public ICommand MoveUpCommand { get; }
     public ICommand MoveDownCommand { get; }
@@ -443,6 +447,140 @@ public partial class MainViewModel : ViewModelBase
         }
     }
 
+    private async Task AddPatchViaPickerAsync()
+    {
+        try
+        {
+            var window = GetMainWindow();
+            if (window == null)
+            {
+                StatusMessage = "Error: Could not access window";
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(PatchesPath) || !Directory.Exists(PatchesPath))
+            {
+                StatusMessage = "Set a patches folder first (TARGET → PATCHES).";
+                return;
+            }
+
+            var result = await window.StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
+            {
+                Title = "Add .kpatch file(s)",
+                AllowMultiple = true,
+                SuggestedStartLocation = await TryGetSuggestedStartFolderAsync(window, GetPatchesBrowseStartDirectory()),
+                FileTypeFilter = new[]
+                {
+                    new FilePickerFileType("KotOR Patch")
+                    {
+                        Patterns = new[] { "*.kpatch" }
+                    },
+                    new FilePickerFileType("All Files")
+                    {
+                        Patterns = new[] { "*" }
+                    }
+                }
+            });
+
+            if (result.Count == 0)
+                return;
+
+            var paths = result
+                .Select(f => f.Path.LocalPath)
+                .Where(p => !string.IsNullOrWhiteSpace(p))
+                .ToList();
+            await AddKpatchFilesAsync(paths);
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"Error adding patch: {ex.Message}";
+        }
+    }
+
+    /// <summary>
+    /// Copies .kpatch files into <see cref="PatchesPath"/> and reloads the library.
+    /// Used by the ADD picker and drag-drop.
+    /// </summary>
+    public async Task AddKpatchFilesAsync(IReadOnlyList<string> paths)
+    {
+        if (string.IsNullOrWhiteSpace(PatchesPath) || !Directory.Exists(PatchesPath))
+        {
+            StatusMessage = "Set a patches folder first (TARGET → PATCHES).";
+            return;
+        }
+
+        var candidates = paths
+            .Where(p => !string.IsNullOrWhiteSpace(p)
+                        && File.Exists(p)
+                        && string.Equals(Path.GetExtension(p), ".kpatch", StringComparison.OrdinalIgnoreCase))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        if (candidates.Count == 0)
+        {
+            StatusMessage = "No .kpatch files to add.";
+            return;
+        }
+
+        var validator = new PatchRepository(PatchesPath);
+        var added = 0;
+        var overwritten = 0;
+        var errors = new List<string>();
+
+        foreach (var sourcePath in candidates)
+        {
+            var fileName = Path.GetFileName(sourcePath);
+            var destPath = Path.Combine(PatchesPath, fileName);
+
+            // Skip no-op when dropping a file that is already the library copy.
+            if (string.Equals(
+                    Path.GetFullPath(sourcePath),
+                    Path.GetFullPath(destPath),
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            var loadResult = validator.LoadPatch(sourcePath);
+            if (!loadResult.Success)
+            {
+                errors.Add($"{fileName}: {loadResult.Error}");
+                continue;
+            }
+
+            try
+            {
+                var existed = File.Exists(destPath);
+                await Task.Run(() => File.Copy(sourcePath, destPath, overwrite: true));
+                if (existed)
+                    overwritten++;
+                else
+                    added++;
+            }
+            catch (Exception ex)
+            {
+                errors.Add($"{fileName}: {ex.Message}");
+            }
+        }
+
+        if (added + overwritten > 0)
+            await LoadPatchesFromDirectoryAsync(PatchesPath);
+
+        var parts = new List<string>();
+        if (added > 0)
+            parts.Add($"Added {added}");
+        if (overwritten > 0)
+            parts.Add($"overwrote {overwritten}");
+        if (errors.Count > 0)
+            parts.Add($"{errors.Count} failed");
+
+        StatusMessage = parts.Count > 0
+            ? string.Join("; ", parts) + (errors.Count > 0 ? $" — {errors[0]}" : string.Empty)
+            : errors.Count > 0
+                ? $"Failed to add patches: {errors[0]}"
+                : "No patches added.";
+    }
+
     private async Task Refresh()
     {
         try
@@ -534,16 +672,31 @@ public partial class MainViewModel : ViewModelBase
 
     private void OnPatchCheckedChanged(object? sender, EventArgs e)
     {
-        if (sender is PatchItemViewModel patch)
+        if (sender is not PatchItemViewModel patch)
+            return;
+
+        if (_isBulkUpdatingPatchChecks)
+            return;
+
+        if (patch.IsOrphaned)
         {
-            if (!_isBulkUpdatingPatchChecks)
-            {
-                SaveCheckedPatches();
-                UpdatePendingChanges();
-                UpdateSelectAllState();
-                UpdateDependencyWarning();
-            }
+            RemoveFromPreferredInstallOrder(patch.Id);
         }
+        else if (patch.IsChecked)
+        {
+            AppendToPreferredInstallOrder(patch.Id);
+        }
+        else
+        {
+            RemoveFromPreferredInstallOrder(patch.Id);
+        }
+
+        RefreshInstallOrderIndicators();
+        SaveCheckedPatches();
+        UpdatePendingChanges();
+        UpdateSelectAllState();
+        UpdateDependencyWarning();
+        RaiseMoveCommandsCanExecute();
     }
 
     private void SetPatchSelectionFromSelectAll(bool isChecked)
@@ -571,6 +724,7 @@ public partial class MainViewModel : ViewModelBase
             _isBulkUpdatingPatchChecks = false;
         }
 
+        ReconcilePreferredInstallOrder();
         SaveCheckedPatches();
         UpdatePendingChanges();
         UpdateSelectAllState();
@@ -611,20 +765,158 @@ public partial class MainViewModel : ViewModelBase
         OnPropertyChanged(nameof(HasVisiblePatches));
     }
 
+    private bool CanMovePatch(object? parameter, int delta)
+    {
+        var patch = parameter as PatchItemViewModel ?? SelectedPatch;
+        if (patch == null || !patch.IsChecked || patch.IsOrphaned)
+            return false;
+
+        var index = IndexInPreferredInstallOrder(patch.Id);
+        var target = index + delta;
+        return index >= 0 && target >= 0 && target < _preferredInstallOrder.Count;
+    }
+
     private void MovePatch(object? parameter, int delta)
     {
         var patch = parameter as PatchItemViewModel ?? SelectedPatch;
-        if (patch == null)
+        if (patch == null || !CanMovePatch(patch, delta))
             return;
 
-        var index = AllPatches.IndexOf(patch);
+        var index = IndexInPreferredInstallOrder(patch.Id);
         var target = index + delta;
-        if (index < 0 || target < 0 || target >= AllPatches.Count)
-            return;
+        (_preferredInstallOrder[index], _preferredInstallOrder[target]) =
+            (_preferredInstallOrder[target], _preferredInstallOrder[index]);
 
-        AllPatches.Move(index, target);
-        StatusMessage = $"Moved {patch.Name} {(delta < 0 ? "up" : "down")}";
-        UpdatePendingChanges();
+        RefreshInstallOrderIndicators();
+        StatusMessage = $"Install order: {patch.Name} {(delta < 0 ? "earlier" : "later")}";
+        RecomputeLoadoutDirty();
+        RaiseMoveCommandsCanExecute();
+    }
+
+    private void RaiseMoveCommandsCanExecute()
+    {
+        if (MoveUpCommand is SimpleCommand up)
+            up.RaiseCanExecuteChanged();
+        if (MoveDownCommand is SimpleCommand down)
+            down.RaiseCanExecuteChanged();
+    }
+
+    private int IndexInPreferredInstallOrder(string patchId)
+    {
+        for (var i = 0; i < _preferredInstallOrder.Count; i++)
+        {
+            if (string.Equals(_preferredInstallOrder[i], patchId, StringComparison.OrdinalIgnoreCase))
+                return i;
+        }
+
+        return -1;
+    }
+
+    private void AppendToPreferredInstallOrder(string patchId)
+    {
+        if (string.IsNullOrWhiteSpace(patchId))
+            return;
+        if (IndexInPreferredInstallOrder(patchId) >= 0)
+            return;
+        _preferredInstallOrder.Add(patchId);
+    }
+
+    private void RemoveFromPreferredInstallOrder(string patchId)
+    {
+        var index = IndexInPreferredInstallOrder(patchId);
+        if (index >= 0)
+            _preferredInstallOrder.RemoveAt(index);
+    }
+
+    /// <summary>
+    /// Sets preferred install order from an ordered id list, keeping only ids present
+    /// in the library (non-orphaned). Does not change checkboxes.
+    /// </summary>
+    private void SetPreferredInstallOrder(IEnumerable<string> preferredIds)
+    {
+        var known = AllPatches
+            .Where(p => !p.IsOrphaned)
+            .ToDictionary(p => p.Id, StringComparer.OrdinalIgnoreCase);
+
+        _preferredInstallOrder.Clear();
+        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var id in preferredIds)
+        {
+            if (!known.TryGetValue(id, out var patch))
+                continue;
+            if (!seen.Add(patch.Id))
+                continue;
+            _preferredInstallOrder.Add(patch.Id);
+        }
+
+        RefreshInstallOrderIndicators();
+        RaiseMoveCommandsCanExecute();
+    }
+
+    /// <summary>
+    /// Keeps preferred order for still-checked patches; appends newly checked ids.
+    /// </summary>
+    private void ReconcilePreferredInstallOrder()
+    {
+        var checkedPatches = AllPatches
+            .Where(p => p.IsChecked && !p.IsOrphaned)
+            .ToList();
+        var checkedIds = checkedPatches
+            .Select(p => p.Id)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        _preferredInstallOrder.RemoveAll(id => !checkedIds.Contains(id));
+
+        var present = _preferredInstallOrder
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+        foreach (var patch in checkedPatches)
+        {
+            if (present.Add(patch.Id))
+                _preferredInstallOrder.Add(patch.Id);
+        }
+
+        RefreshInstallOrderIndicators();
+        RecomputeLoadoutDirty();
+        RaiseMoveCommandsCanExecute();
+    }
+
+    private void RefreshInstallOrderIndicators()
+    {
+        var orderById = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+        for (var i = 0; i < _preferredInstallOrder.Count; i++)
+            orderById[_preferredInstallOrder[i]] = i + 1;
+
+        foreach (var patch in AllPatches)
+        {
+            if (patch.IsChecked && !patch.IsOrphaned && orderById.TryGetValue(patch.Id, out var order))
+                patch.DisplayOrder = order;
+            else
+                patch.DisplayOrder = 0;
+        }
+    }
+
+    private List<string> GetPreferredCheckedPatchIds(bool compatibleOnly)
+    {
+        var checkedIds = AllPatches
+            .Where(p => p.IsChecked && !p.IsOrphaned && (!compatibleOnly || p.IsCompatible))
+            .Select(p => p.Id)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        var ordered = new List<string>();
+        foreach (var id in _preferredInstallOrder)
+        {
+            if (checkedIds.Remove(id))
+                ordered.Add(id);
+        }
+
+        // Any checked ids missing from preferred order (should be rare) append in library order.
+        foreach (var patch in AllPatches)
+        {
+            if (checkedIds.Remove(patch.Id))
+                ordered.Add(patch.Id);
+        }
+
+        return ordered;
     }
 
     private void SelectPatchById(string? id)
@@ -703,8 +995,11 @@ public partial class MainViewModel : ViewModelBase
         }
 
         ClearPersistedPatchSelection();
+        _preferredInstallOrder.Clear();
+        RefreshInstallOrderIndicators();
         UpdateSelectAllState();
         UpdatePendingChanges();
+        RaiseMoveCommandsCanExecute();
     }
 
     private void SyncPatchSelectionWithInstalledPatches(IEnumerable<string> installedPatchIds)
@@ -757,6 +1052,8 @@ public partial class MainViewModel : ViewModelBase
             AllPatches.Insert(0, orphanedPatch);
         }
 
+        SetPreferredInstallOrder(normalizedInstalledIds);
+        ReconcilePreferredInstallOrder();
         SaveCheckedPatches();
         UpdateSelectAllState();
         UpdatePendingChanges();
@@ -786,6 +1083,7 @@ public partial class MainViewModel : ViewModelBase
         }
 
         AllPatches.Clear();
+        _preferredInstallOrder.Clear();
     }
 
     /// <summary>
@@ -842,6 +1140,7 @@ public partial class MainViewModel : ViewModelBase
         }
 
         OnPropertyChanged(nameof(HasVisiblePatches));
+        RaiseMoveCommandsCanExecute();
     }
 
     private void ClearPersistedPatchSelection()
@@ -855,7 +1154,7 @@ public partial class MainViewModel : ViewModelBase
 
     private void SaveCheckedPatches()
     {
-        _settings.CheckedPatchIds = AllPatches.Where(p => p.IsChecked).Select(p => p.Id).ToList();
+        _settings.CheckedPatchIds = GetPreferredCheckedPatchIds(compatibleOnly: false);
         _settings.Save();
     }
 
@@ -911,10 +1210,12 @@ public partial class MainViewModel : ViewModelBase
     {
         ((SimpleCommand)BrowseGameCommand).RaiseCanExecuteChanged();
         ((SimpleCommand)BrowsePatchesCommand).RaiseCanExecuteChanged();
+        ((SimpleCommand)AddPatchCommand).RaiseCanExecuteChanged();
         ((SimpleCommand)RefreshCommand).RaiseCanExecuteChanged();
         ((SimpleCommand)ApplyPatchesCommand).RaiseCanExecuteChanged();
         ((SimpleCommand)UninstallAllCommand).RaiseCanExecuteChanged();
         ((SimpleCommand)LaunchGameCommand).RaiseCanExecuteChanged();
+        RaiseMoveCommandsCanExecute();
         RaiseLoadoutCommandsCanExecute();
         ((SimpleCommand)SelectKotor1Command).RaiseCanExecuteChanged();
         ((SimpleCommand)SelectKotor2Command).RaiseCanExecuteChanged();
@@ -1019,7 +1320,7 @@ public partial class MainViewModel : ViewModelBase
             var options = new PatchApplicator.InstallOptions
             {
                 GameExePath = GamePath,
-                PatchIds = checkedPatches.Select(p => p.Id).ToList(),
+                PatchIds = GetPreferredCheckedPatchIds(compatibleOnly: true),
                 CreateBackup = true,
                 PatcherDllPath = File.Exists(patcherDllPath) ? patcherDllPath : null,
                 PatcherSoPath = File.Exists(patcherSoPath) ? patcherSoPath : null,
@@ -1240,6 +1541,9 @@ public partial class MainViewModel : ViewModelBase
 
                     foreach (var opt in entry.Manifest.Options)
                     {
+                        if (opt.IsComputed)
+                            continue;
+
                         var optVm = new PatchOptionItemViewModel(
                             opt.Id,
                             opt.DisplayName,
@@ -1267,6 +1571,9 @@ public partial class MainViewModel : ViewModelBase
                     patch.CheckedChanged += OnPatchCheckedChanged;
                     AllPatches.Add(patch);
                 }
+
+                SetPreferredInstallOrder(_settings.CheckedPatchIds);
+                ReconcilePreferredInstallOrder();
 
                 // Update compatibility status for loaded patches
                 UpdatePatchCompatibility();

@@ -1,6 +1,8 @@
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
+using Avalonia.Platform.Storage;
 using KPatchCore.Models;
 using KPatchLauncher.Models;
 
@@ -148,6 +150,8 @@ public partial class MainViewModel
         _librarySortMode = string.IsNullOrWhiteSpace(_settings.LibrarySortMode)
             ? "name"
             : _settings.LibrarySortMode;
+        if (string.Equals(_librarySortMode, "custom", StringComparison.OrdinalIgnoreCase))
+            _librarySortMode = "name";
         _loadoutData = LoadoutStore.Load();
         RefreshLoadoutList();
 
@@ -158,6 +162,8 @@ public partial class MainViewModel
             () => CanEditPaths && HasActiveLoadout);
         ClearLoadoutCommand = new SimpleCommand(ClearActiveLoadout,
             () => CanEditPaths && HasActiveLoadout);
+        ExportLoadoutCommand = new SimpleCommand(async () => await ExportLoadoutAsync(), () => CanEditPaths);
+        ImportLoadoutCommand = new SimpleCommand(async () => await ImportLoadoutAsync(), () => CanEditPaths);
         SelectKotor1Command = new SimpleCommand(() => SwitchToRememberedTarget(GameTitle.KOTOR1), () => HasKotor1Memory);
         SelectKotor2Command = new SimpleCommand(() => SwitchToRememberedTarget(GameTitle.KOTOR2), () => HasKotor2Memory);
         RepairStagingCommand = new SimpleCommand(async () => await ApplyPatches(skipEmptyConfirm: true),
@@ -186,6 +192,8 @@ public partial class MainViewModel
     public System.Windows.Input.ICommand DeleteLoadoutCommand { get; private set; } = null!;
     public System.Windows.Input.ICommand DuplicateLoadoutCommand { get; private set; } = null!;
     public System.Windows.Input.ICommand ClearLoadoutCommand { get; private set; } = null!;
+    public System.Windows.Input.ICommand ExportLoadoutCommand { get; private set; } = null!;
+    public System.Windows.Input.ICommand ImportLoadoutCommand { get; private set; } = null!;
     public System.Windows.Input.ICommand SelectKotor1Command { get; private set; } = null!;
     public System.Windows.Input.ICommand SelectKotor2Command { get; private set; } = null!;
     public System.Windows.Input.ICommand RepairStagingCommand { get; private set; } = null!;
@@ -265,6 +273,10 @@ public partial class MainViewModel
             dup.RaiseCanExecuteChanged();
         if (ClearLoadoutCommand is SimpleCommand clr)
             clr.RaiseCanExecuteChanged();
+        if (ExportLoadoutCommand is SimpleCommand exp)
+            exp.RaiseCanExecuteChanged();
+        if (ImportLoadoutCommand is SimpleCommand imp)
+            imp.RaiseCanExecuteChanged();
     }
 
     private void RefreshLoadoutList()
@@ -373,7 +385,7 @@ public partial class MainViewModel
         }
 
         target.GameKey = gameKey;
-        target.PatchIds = AllPatches.Where(p => p.IsChecked && !p.IsOrphaned).Select(p => p.Id).ToList();
+        target.PatchIds = GetPreferredCheckedPatchIds(compatibleOnly: false);
         target.OptionValues = CaptureOptionValues();
         target.UpdatedAt = DateTimeOffset.UtcNow;
 
@@ -467,6 +479,148 @@ public partial class MainViewModel
         StatusMessage = "Loadout selection cleared";
     }
 
+    private async Task ExportLoadoutAsync()
+    {
+        try
+        {
+            var window = GetMainWindow();
+            if (window == null)
+            {
+                StatusMessage = "Error: Could not access window";
+                return;
+            }
+
+            var name = !string.IsNullOrWhiteSpace(ActiveLoadout?.Name)
+                ? ActiveLoadout!.Name
+                : !string.IsNullOrWhiteSpace(NewLoadoutName)
+                    ? NewLoadoutName.Trim()
+                    : "Exported";
+
+            var portable = new PortableLoadoutFile
+            {
+                SchemaVersion = PortableLoadoutFile.CurrentSchemaVersion,
+                Name = name,
+                GameKey = CurrentGameKey(),
+                PatchIds = GetPreferredCheckedPatchIds(compatibleOnly: false),
+                OptionValues = CaptureOptionValues()
+            };
+
+            var safeName = string.Join("_", name.Split(Path.GetInvalidFileNameChars()));
+            if (string.IsNullOrWhiteSpace(safeName))
+                safeName = "loadout";
+
+            var file = await window.StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions
+            {
+                Title = "Export loadout",
+                SuggestedFileName = $"{safeName}.kploadout",
+                DefaultExtension = "kploadout",
+                FileTypeChoices = new[]
+                {
+                    new FilePickerFileType("KotOR Patch Loadout")
+                    {
+                        Patterns = new[] { "*.kploadout" }
+                    },
+                    new FilePickerFileType("JSON")
+                    {
+                        Patterns = new[] { "*.json" }
+                    }
+                }
+            });
+
+            if (file == null)
+                return;
+
+            var path = file.Path.LocalPath;
+            await File.WriteAllTextAsync(path, PortableLoadoutFile.Serialize(portable));
+            StatusMessage = $"Exported loadout '{name}'";
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"Failed to export loadout: {ex.Message}";
+        }
+    }
+
+    private async Task ImportLoadoutAsync()
+    {
+        try
+        {
+            var window = GetMainWindow();
+            if (window == null)
+            {
+                StatusMessage = "Error: Could not access window";
+                return;
+            }
+
+            var result = await window.StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
+            {
+                Title = "Import loadout",
+                AllowMultiple = false,
+                FileTypeFilter = new[]
+                {
+                    new FilePickerFileType("KotOR Patch Loadout")
+                    {
+                        Patterns = new[] { "*.kploadout", "*.json" }
+                    },
+                    new FilePickerFileType("All Files")
+                    {
+                        Patterns = new[] { "*" }
+                    }
+                }
+            });
+
+            if (result.Count == 0)
+                return;
+
+            var path = result[0].Path.LocalPath;
+            var json = await File.ReadAllTextAsync(path);
+            var portable = PortableLoadoutFile.TryDeserialize(json, out var error);
+            if (portable == null)
+            {
+                StatusMessage = $"Failed to import loadout: {error}";
+                return;
+            }
+
+            // Always attach to the current target so the loadout appears in the combo.
+            var gameKey = CurrentGameKey();
+
+            var name = portable.Name;
+            if (_loadoutData.Loadouts.Any(l =>
+                    l.GameKey == gameKey &&
+                    string.Equals(l.Name, name, StringComparison.OrdinalIgnoreCase)))
+            {
+                name = UniqueCopyName(name, gameKey);
+            }
+
+            var loadout = portable.ToLoadout();
+            loadout.Name = name;
+            loadout.GameKey = gameKey;
+
+            _loadoutData.Loadouts.Add(loadout);
+            if (!LoadoutStore.TrySave(_loadoutData, out var saveError))
+            {
+                StatusMessage = $"Failed to import loadout: {saveError}";
+                return;
+            }
+
+            RefreshLoadoutList();
+            var imported = AvailableLoadouts.FirstOrDefault(l => l.Id == loadout.Id) ?? loadout;
+            CommitActiveLoadout(imported, applyChecks: true);
+
+            var missing = loadout.PatchIds
+                .Where(id => !AllPatches.Any(p => !p.IsOrphaned &&
+                    string.Equals(p.Id, id, StringComparison.OrdinalIgnoreCase)))
+                .ToList();
+
+            StatusMessage = missing.Count == 0
+                ? $"Imported loadout '{name}' — Apply to stage"
+                : $"Imported loadout '{name}' — {missing.Count} patch(es) missing from library";
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"Failed to import loadout: {ex.Message}";
+        }
+    }
+
     private string UniqueCopyName(string baseName, string gameKey)
     {
         var candidate = $"{baseName} (copy)";
@@ -512,14 +666,8 @@ public partial class MainViewModel
             return;
         }
 
-        var currentIds = AllPatches
-            .Where(p => p.IsChecked && !p.IsOrphaned)
-            .Select(p => p.Id)
-            .OrderBy(id => id, StringComparer.OrdinalIgnoreCase)
-            .ToList();
-        var savedIds = _activeLoadout.PatchIds
-            .OrderBy(id => id, StringComparer.OrdinalIgnoreCase)
-            .ToList();
+        var currentIds = GetPreferredCheckedPatchIds(compatibleOnly: false);
+        var savedIds = _activeLoadout.PatchIds;
 
         if (currentIds.Count != savedIds.Count ||
             !currentIds.SequenceEqual(savedIds, StringComparer.OrdinalIgnoreCase))
@@ -589,6 +737,9 @@ public partial class MainViewModel
         {
             _isBulkUpdatingPatchChecks = false;
         }
+
+        SetPreferredInstallOrder(loadout.PatchIds);
+        ReconcilePreferredInstallOrder();
 
         SaveCheckedPatches();
         UpdatePendingChanges();

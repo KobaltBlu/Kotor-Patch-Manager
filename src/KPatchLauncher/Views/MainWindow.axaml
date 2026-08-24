@@ -56,7 +56,7 @@
             <!-- 1. Title bar -->
             <Grid x:Name="TitleBar"
                   Grid.Row="0"
-                  ColumnDefinitions="Auto,*,Auto,Auto"
+                  ColumnDefinitions="Auto,*,Auto"
                   PointerPressed="OnTitleBarPointerPressed"
                   DoubleTapped="OnTitleBarDoubleTapped"
                   Background="Transparent">
@@ -92,12 +92,7 @@
                             IsVisible="{Binding HasKotor2Memory}"
                             ToolTip.Tip="Switch to remembered KotOR 2"/>
                 </StackPanel>
-                <Border Grid.Column="2"
-                        Classes="version-badge"
-                        IsVisible="{Binding !IsFirstRun}">
-                    <TextBlock Text="{Binding KotorVersion}"/>
-                </Border>
-                <StackPanel Grid.Column="3"
+                <StackPanel Grid.Column="2"
                             Orientation="Horizontal"
                             VerticalAlignment="Center"
                             Margin="0,0,8,0">
@@ -176,6 +171,18 @@
                                 MinHeight="28"
                                 Padding="6,4"
                                 ToolTip.Tip="Clear loadout selection without changing checklist"/>
+                        <Button Content="EXP"
+                                Command="{Binding ExportLoadoutCommand}"
+                                MinWidth="48"
+                                MinHeight="28"
+                                Padding="6,4"
+                                ToolTip.Tip="Export current checklist and options to a .kploadout file"/>
+                        <Button Content="IMP"
+                                Command="{Binding ImportLoadoutCommand}"
+                                MinWidth="48"
+                                MinHeight="28"
+                                Padding="6,4"
+                                ToolTip.Tip="Import a loadout file into the list and update the checklist. APPLY still stages the game."/>
                         <Button Content="REFRESH"
                                 Command="{Binding RefreshCommand}"
                                 MinWidth="80"
@@ -228,19 +235,27 @@
                 <Grid ColumnDefinitions="2*,3*"
                       ColumnSpacing="12"
                       IsVisible="{Binding !IsFirstRun}">
-                    <controls:HudPanel Header="PATCHES">
+                    <controls:HudPanel x:Name="PatchesPanel"
+                                       Header="PATCHES"
+                                       DragDrop.AllowDrop="True">
                         <controls:HudPanel.HeaderContent>
                             <StackPanel Orientation="Horizontal" Spacing="6">
+                                <Button Content="ADD"
+                                        Command="{Binding AddPatchCommand}"
+                                        MinWidth="56"
+                                        MinHeight="28"
+                                        Padding="8,4"
+                                        ToolTip.Tip="Copy a .kpatch into the patches folder"/>
                                 <Button Classes="icon"
                                         Content="↑"
                                         Command="{Binding MoveUpCommand}"
                                         CommandParameter="{Binding SelectedPatch}"
-                                        ToolTip.Tip="Move selected patch up"/>
+                                        ToolTip.Tip="Earlier install order"/>
                                 <Button Classes="icon"
                                         Content="↓"
                                         Command="{Binding MoveDownCommand}"
                                         CommandParameter="{Binding SelectedPatch}"
-                                        ToolTip.Tip="Move selected patch down"/>
+                                        ToolTip.Tip="Later install order"/>
                             </StackPanel>
                         </controls:HudPanel.HeaderContent>
                         <DockPanel>
@@ -287,7 +302,7 @@
                                      ScrollViewer.AllowAutoHide="False">
                                 <ListBox.ItemTemplate>
                                     <DataTemplate x:DataType="vm:PatchItemViewModel">
-                                        <Grid ColumnDefinitions="Auto,*,Auto"
+                                        <Grid ColumnDefinitions="Auto,Auto,*,Auto"
                                               Classes.muted="{Binding IsMuted}"
                                               ToolTip.Tip="{Binding CompatibilityStatus}">
                                             <CheckBox Grid.Column="0"
@@ -295,11 +310,18 @@
                                                       VerticalAlignment="Center"
                                                       Margin="0,0,8,0"/>
                                             <TextBlock Grid.Column="1"
+                                                       Text="{Binding InstallOrderText}"
+                                                       Classes="mono"
+                                                       Width="28"
+                                                       VerticalAlignment="Center"
+                                                       Opacity="0.85"
+                                                       Margin="0,0,8,0"/>
+                                            <TextBlock Grid.Column="2"
                                                        Text="{Binding DisplayText}"
                                                        VerticalAlignment="Center"
                                                        TextWrapping="NoWrap"
                                                        TextTrimming="CharacterEllipsis"/>
-                                            <Border Grid.Column="2"
+                                            <Border Grid.Column="3"
                                                     Classes="badge"
                                                     Classes.badge-on="{Binding IsStateOn}"
                                                     Classes.badge-pending="{Binding IsStatePending}"
@@ -347,7 +369,8 @@
                                                     </StackPanel>
                                                     <StackPanel Grid.Column="1">
                                                         <TextBlock Text="AUTHOR" Classes="caption"/>
-                                                        <TextBlock Text="{Binding SelectedPatch.Author}"/>
+                                                        <TextBlock Text="{Binding SelectedPatch.Author}"
+                                                                   TextWrapping="Wrap"/>
                                                     </StackPanel>
                                                 </Grid>
                                                 <StackPanel>

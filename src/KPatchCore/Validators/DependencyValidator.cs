@@ -128,12 +128,20 @@ public static class DependencyValidator
         Dictionary<string, PatchManifest> patches,
         IEnumerable<string> patchesToInstall)
     {
-        var toInstall = patchesToInstall.ToHashSet();
-        var ordered = new List<string>();
-        var visited = new HashSet<string>();
+        // Preserve caller preference order as a stable tiebreaker under the topo sort.
+        var preferredOrder = new List<string>();
+        var toInstall = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var patchId in patchesToInstall)
+        {
+            if (toInstall.Add(patchId))
+                preferredOrder.Add(patchId);
+        }
 
-        // Topological sort using DFS
-        foreach (var patchId in toInstall)
+        var ordered = new List<string>();
+        var visited = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        // Topological sort using DFS; outer walk follows preferredOrder.
+        foreach (var patchId in preferredOrder)
         {
             if (!VisitPatch(patchId, patches, toInstall, visited, ordered))
             {

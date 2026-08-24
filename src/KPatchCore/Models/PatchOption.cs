@@ -1,8 +1,8 @@
 namespace KPatchCore.Models;
 
 /// <summary>
-/// User-configurable patch option (manifest [[patch.options]]).
-/// Phase 1: integer only.
+/// User-configurable or derived patch option (manifest [[patch.options]]).
+/// Supported types: integer, computed.
 /// </summary>
 public sealed class PatchOption
 {
@@ -13,4 +13,12 @@ public sealed class PatchOption
     public int Default { get; init; }
     public int? Min { get; init; }
     public int? Max { get; init; }
+
+    /// <summary>
+    /// Expression for type=computed (e.g. "max_level + 1"). Null for integer options.
+    /// </summary>
+    public string? Expression { get; init; }
+
+    public bool IsComputed =>
+        string.Equals(Type, "computed", StringComparison.OrdinalIgnoreCase);
 }

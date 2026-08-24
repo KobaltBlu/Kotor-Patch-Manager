@@ -1,8 +1,11 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Platform;
+using Avalonia.Platform.Storage;
 using KPatchLauncher.ViewModels;
 
 namespace KPatchLauncher.Views;
@@ -14,6 +17,8 @@ public partial class MainWindow : Window
         InitializeComponent();
         TrySetWindowIcon();
         AddHandler(KeyDownEvent, OnKeyDown, Avalonia.Interactivity.RoutingStrategies.Tunnel);
+        AddHandler(DragDrop.DragOverEvent, OnPatchesDragOver);
+        AddHandler(DragDrop.DropEvent, OnPatchesDrop);
     }
 
     private void TrySetWindowIcon()
@@ -62,6 +67,57 @@ public partial class MainWindow : Window
         WindowState = WindowState == WindowState.Maximized
             ? WindowState.Normal
             : WindowState.Maximized;
+    }
+
+    private static bool IsOverPatchesPanel(object? source)
+    {
+        for (var visual = source as Control; visual != null; visual = visual.Parent as Control)
+        {
+            if (visual.Name == "PatchesPanel")
+                return true;
+        }
+
+        return false;
+    }
+
+    private static IReadOnlyList<string> GetKpatchPathsFromDrag(DragEventArgs e)
+    {
+        var files = e.DataTransfer.TryGetFiles();
+        if (files == null || files.Length == 0)
+            return Array.Empty<string>();
+
+        return files
+            .Select(f => f.TryGetLocalPath())
+            .Where(p => !string.IsNullOrWhiteSpace(p)
+                        && p!.EndsWith(".kpatch", StringComparison.OrdinalIgnoreCase))
+            .Cast<string>()
+            .ToList();
+    }
+
+    private void OnPatchesDragOver(object? sender, DragEventArgs e)
+    {
+        if (!IsOverPatchesPanel(e.Source))
+            return;
+
+        // File paths may be unavailable during DragOver on some platforms; accept File format
+        // and filter to .kpatch on Drop.
+        e.DragEffects = e.DataTransfer.Contains(DataFormat.File)
+            ? DragDropEffects.Copy
+            : DragDropEffects.None;
+        e.Handled = true;
+    }
+
+    private async void OnPatchesDrop(object? sender, DragEventArgs e)
+    {
+        if (!IsOverPatchesPanel(e.Source))
+            return;
+
+        e.Handled = true;
+        var paths = GetKpatchPathsFromDrag(e);
+        if (paths.Count == 0 || DataContext is not MainViewModel vm)
+            return;
+
+        await vm.AddKpatchFilesAsync(paths);
     }
 
     private void OnKeyDown(object? sender, KeyEventArgs e)

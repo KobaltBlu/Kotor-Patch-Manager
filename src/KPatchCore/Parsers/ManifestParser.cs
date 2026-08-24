@@ -179,6 +179,8 @@ public static class ManifestParser
                 else if (maxObj is int i) max = i;
             }
 
+            TryGetString(optionTable, "expression", out var expression);
+
             options.Add(new PatchOption
             {
                 Id = optionId,
@@ -187,7 +189,8 @@ public static class ManifestParser
                 Description = description ?? string.Empty,
                 Default = defaultVal,
                 Min = min,
-                Max = max
+                Max = max,
+                Expression = string.IsNullOrWhiteSpace(expression) ? null : expression
             });
         }
 

@@ -122,8 +122,19 @@ public class PatchItemViewModel : ViewModelBase
     public int DisplayOrder
     {
         get => _displayOrder;
-        set => SetProperty(ref _displayOrder, value);
+        set
+        {
+            if (SetProperty(ref _displayOrder, value))
+            {
+                OnPropertyChanged(nameof(InstallOrderText));
+                OnPropertyChanged(nameof(HasInstallOrder));
+            }
+        }
     }
+
+    public string InstallOrderText => _displayOrder > 0 ? $"#{_displayOrder}" : "-";
+
+    public bool HasInstallOrder => _displayOrder > 0;
 
     public bool IsCompatible
     {

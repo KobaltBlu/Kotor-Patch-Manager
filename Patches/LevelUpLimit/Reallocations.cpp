@@ -28,17 +28,30 @@ static void LoadOptionsFromSidecar(HINSTANCE hinstDLL)
         return;
 
     char line[128];
+    bool sawInclusive = false;
     while (fgets(line, sizeof(line), f))
     {
+        char key[64] = {};
         int value = 0;
-        if (sscanf(line, "max_level=%d", &value) == 1 && value >= 21 && value <= 100)
+        if (sscanf(line, "%63[^=]=%d", key, &value) != 2)
+            continue;
+
+        if (strcmp(key, "max_level") == 0)
         {
             g_maxLevel = value;
-            g_maxLevelInclusive = value + 1;
             debugLog("[LevelUpLimit] options.ini max_level=%d", g_maxLevel);
+        }
+        else if (strcmp(key, "max_level_inclusive") == 0)
+        {
+            g_maxLevelInclusive = value;
+            sawInclusive = true;
+            debugLog("[LevelUpLimit] options.ini max_level_inclusive=%d", g_maxLevelInclusive);
         }
     }
     fclose(f);
+
+    if (!sawInclusive)
+        g_maxLevelInclusive = g_maxLevel + 1;
 }
 
 extern "C" void __cdecl InitRequiredExpPerLevel(void* rules)
