@@ -52,11 +52,6 @@ public class PatchApplicator
         /// is a native Linux ELF (DeploymentMethod.ElfNeeded). Ignored otherwise.
         /// </summary>
         public string? PatcherSoPath { get; init; }
-
-        /// <summary>
-        /// Per-patch option values: patchId -> optionId -> int.
-        /// </summary>
-        public Dictionary<string, Dictionary<string, int>>? PatchOptionValues { get; init; }
     }
 
     /// <summary>
@@ -477,66 +472,6 @@ public class PatchApplicator
                 TargetVersionSha = gameVersion.Hash
             };
 
-            var allResolvedOptions = new Dictionary<string, Dictionary<string, int>>(StringComparer.OrdinalIgnoreCase);
-
-            foreach (var patchId in installOrder)
-            {
-                var entry = patchEntries[patchId];
-                var userOpts = options.PatchOptionValues != null &&
-                               options.PatchOptionValues.TryGetValue(patchId, out var u)
-                    ? u
-                    : null;
-
-                var resolveResult = OptionResolver.ResolveOptions(entry.Manifest, userOpts, out var resolved);
-                if (!resolveResult.Success)
-                {
-                    if (backup != null)
-                        BackupManager.RestoreBackup(backup);
-
-                    return new InstallResult
-                    {
-                        Success = false,
-                        Error = resolveResult.Error,
-                        DetectedVersion = gameVersion,
-                        Backup = backup,
-                        Messages = messages
-                    };
-                }
-
-                if (resolved.Count > 0)
-                    allResolvedOptions[patchId] = resolved;
-
-                var hooks = hooksByPatch[patchId];
-                foreach (var hook in hooks)
-                {
-                    var templateResult = OptionResolver.ApplyTemplates(hook, resolved);
-                    if (!templateResult.Success)
-                    {
-                        if (backup != null)
-                            BackupManager.RestoreBackup(backup);
-
-                        return new InstallResult
-                        {
-                            Success = false,
-                            Error = $"{patchId}: {templateResult.Error}",
-                            DetectedVersion = gameVersion,
-                            Backup = backup,
-                            Messages = messages
-                        };
-                    }
-                }
-
-                // Write sidecar options for patch DLLs (e.g. LevelUpLimit)
-                if (resolved.Count > 0)
-                {
-                    WritePatchOptionsSidecar(gameDir, patchId, resolved);
-                }
-            }
-
-            config.PatchOptions.Clear();
-            foreach (var kvp in allResolvedOptions)
-                config.PatchOptions[kvp.Key] = kvp.Value;
-
             foreach (var patchId in installOrder)
             {
                 var hooks = hooksByPatch[patchId];
@@ -842,27 +777,6 @@ public class PatchApplicator
                 Backup = backup,
                 Messages = messages
             };
-        }
-    }
-
-    /// <summary>
-    /// Writes patches/&lt;id&gt;/options.ini next to the extracted patch DLL for runtime consumption.
-    /// </summary>
-    private static void WritePatchOptionsSidecar(
-        string gameDir,
-        string patchId,
-        Dictionary<string, int> resolved)
-    {
-        try
-        {
-            var dir = Path.Combine(gameDir, "patches", patchId);
-            Directory.CreateDirectory(dir);
-            var lines = resolved.Select(kv => $"{kv.Key}={kv.Value}");
-            File.WriteAllLines(Path.Combine(dir, "options.ini"), lines);
-        }
-        catch
-        {
-            // Non-fatal: hooks may still have resolved literal bytes
         }
     }
 }

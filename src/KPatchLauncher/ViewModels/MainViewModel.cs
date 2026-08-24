@@ -1324,8 +1324,7 @@ public partial class MainViewModel : ViewModelBase
                 CreateBackup = true,
                 PatcherDllPath = File.Exists(patcherDllPath) ? patcherDllPath : null,
                 PatcherSoPath = File.Exists(patcherSoPath) ? patcherSoPath : null,
-                ProxyDllPath = File.Exists(proxyDllPath) ? proxyDllPath : null,
-                PatchOptionValues = CaptureOptionValues()
+                ProxyDllPath = File.Exists(proxyDllPath) ? proxyDllPath : null
             };
 
             // Run on background thread
@@ -1538,26 +1537,6 @@ public partial class MainViewModel : ViewModelBase
                         License = entry.Manifest.License,
                         HasAdditionalFiles = entry.HasAdditionalFiles
                     };
-
-                    foreach (var opt in entry.Manifest.Options)
-                    {
-                        if (opt.IsComputed)
-                            continue;
-
-                        var optVm = new PatchOptionItemViewModel(
-                            opt.Id,
-                            opt.DisplayName,
-                            opt.Description,
-                            opt.Default,
-                            opt.Min,
-                            opt.Max);
-                        optVm.ValueChanged += (_, _) =>
-                        {
-                            UpdatePendingChanges();
-                            RecomputeLoadoutDirty();
-                        };
-                        vm.Options.Add(optVm);
-                    }
 
                     return vm;
                 }).ToList();

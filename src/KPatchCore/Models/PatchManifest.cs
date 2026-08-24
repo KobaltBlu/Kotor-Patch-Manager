@@ -46,11 +46,6 @@ public sealed class PatchManifest
     public Dictionary<string, string> SupportedVersions { get; init; } = new();
 
     /// <summary>
-    /// Optional configurable options (Phase 1: integer)
-    /// </summary>
-    public List<PatchOption> Options { get; init; } = new();
-
-    /// <summary>
     /// Optional tags for library browsing
     /// </summary>
     public List<string> Tags { get; init; } = new();

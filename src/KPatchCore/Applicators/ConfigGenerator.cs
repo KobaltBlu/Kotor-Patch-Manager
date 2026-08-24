@@ -159,26 +159,6 @@ public static class ConfigGenerator
 
         model["patches"] = patchesArray;
 
-        foreach (var (patchId, optionMap) in config.PatchOptions)
-        {
-            if (optionMap.Count == 0)
-                continue;
-
-            if (!model.TryGetValue("options", out var optionsObj) || optionsObj is not TomlTable optionsRoot)
-            {
-                optionsRoot = new TomlTable();
-                model["options"] = optionsRoot;
-            }
-
-            var optionsTable = new TomlTable();
-            foreach (var (optionId, value) in optionMap)
-            {
-                optionsTable[optionId] = (long)value;
-            }
-
-            optionsRoot[patchId] = optionsTable;
-        }
-
         return Toml.FromModel(model);
     }
 

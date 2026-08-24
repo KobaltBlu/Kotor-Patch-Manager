@@ -1,43 +1,6 @@
-using System.Collections.ObjectModel;
 using System.Collections.Generic;
 
 namespace KPatchLauncher.ViewModels;
-
-public sealed class PatchOptionItemViewModel : ViewModelBase
-{
-    private decimal _value;
-
-    public PatchOptionItemViewModel(string id, string displayName, string description, int value, int? min, int? max)
-    {
-        Id = id;
-        DisplayName = displayName;
-        Description = description;
-        Min = min ?? int.MinValue;
-        Max = max ?? int.MaxValue;
-        _value = value;
-    }
-
-    public string Id { get; }
-    public string DisplayName { get; }
-    public string Description { get; }
-    public decimal Min { get; }
-    public decimal Max { get; }
-
-    public decimal Value
-    {
-        get => _value;
-        set
-        {
-            var clamped = Math.Clamp(value, Min, Max);
-            if (SetProperty(ref _value, clamped))
-                ValueChanged?.Invoke(this, EventArgs.Empty);
-        }
-    }
-
-    public int IntValue => (int)Value;
-
-    public event EventHandler? ValueChanged;
-}
 
 public class PatchItemViewModel : ViewModelBase
 {
@@ -201,7 +164,6 @@ public class PatchItemViewModel : ViewModelBase
     public List<string> Conflicts { get; set; } = new();
     public List<string> SupportedVersions { get; set; } = new();
     public List<string> Tags { get; set; } = new();
-    public ObservableCollection<PatchOptionItemViewModel> Options { get; } = new();
 
     public bool HasRequires => Requires.Count > 0;
     public bool HasConflicts => Conflicts.Count > 0;
@@ -209,7 +171,6 @@ public class PatchItemViewModel : ViewModelBase
     public bool HasSupportedVersions => SupportedVersions.Count > 0;
     public bool HasUrl => !string.IsNullOrWhiteSpace(Url);
     public bool HasLicense => !string.IsNullOrWhiteSpace(License);
-    public bool HasOptions => Options.Count > 0;
     public bool HasTags => Tags.Count > 0;
     public string TagsText => string.Join(" · ", Tags);
     public string SupportedVersionsText => string.Join(", ", SupportedVersions);

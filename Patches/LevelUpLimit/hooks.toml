@@ -3,7 +3,7 @@
 address = 0x004f1a3e
 type = "simple"
 original_bytes = [0xb8, 0x14, 0x00, 0x00, 0x00]
-replacement_bytes = [0xb8, "{{max_level}}", 0x00, 0x00, 0x00]
+replacement_bytes = [0xb8, 0x32, 0x00, 0x00, 0x00]
 
 [[hooks]] # Treatment of (Rules->internal).required_exp_per_level
 address = 0x004f1a43
@@ -20,7 +20,7 @@ replacement_bytes = [
 address = 0x0054ec5b
 type = "simple"
 original_bytes = [0xc7, 0x02, 0x14, 0x00, 0x00, 0x00]
-replacement_bytes = [0xc7, 0x02, "{{max_level}}", 0x00, 0x00, 0x00]
+replacement_bytes = [0xc7, 0x02, 0x32, 0x00, 0x00, 0x00]
 
 # CSWRules::LoadClassInfo
 [[hooks]]
@@ -44,7 +44,7 @@ replacement_bytes = [
 address = 0x0054fe50
 type = "simple"
 original_bytes = [0x83, 0xf8, 0x14]
-replacement_bytes = [0x83, 0xf8, "{{max_level}}"]
+replacement_bytes = [0x83, 0xf8, 0x32]
 
 # CSWRules::CSWRules
 [[hooks]]
@@ -68,7 +68,7 @@ replacement_bytes = [0x8b, 0x6e, 0x38]
 address = 0x00552fd6
 type = "simple"
 original_bytes = [0x83, 0xff, 0x14]
-replacement_bytes = [0x83, 0xff, "{{max_level}}"]
+replacement_bytes = [0x83, 0xff, 0x32]
 
 # CSWSCreatureStats::CalculateExpNeededForNextLevel
 [[hooks]]
@@ -85,7 +85,7 @@ replacement_bytes = [
 address = 0x005a54aa
 type = "simple"
 original_bytes = [0x83, 0xf8, 0x14]
-replacement_bytes = [0x83, 0xf8, "{{max_level}}"]
+replacement_bytes = [0x83, 0xf8, 0x32]
 
 [[hooks]]
 address = 0x005a54b3
@@ -261,7 +261,7 @@ replacement_bytes = [
 						0x40,			   # INC EAX
 						0x89, 0x45, 0xFC,  # MOV dword ptr [EBP-4], EAX
 						0x58, 			   # POP EAX
-						0x83, 0xff, "{{max_level}}"   # CMP EDI, max_level
+						0x83, 0xff, 0x32   # CMP EDI, 0x32
 					]
 
 # CSWClass::LoadSpellKnownTable
@@ -297,7 +297,7 @@ replacement_bytes = [
 address = 0x005bde3e
 type = "simple"
 original_bytes =	[0x83, 0xf8, 0x14]
-replacement_bytes = [0x83, 0xf8, "{{max_level}}"]
+replacement_bytes = [0x83, 0xf8, 0x32]
 
 # CSWClass::LoadArmorClassTable
 [[hooks]]
@@ -310,7 +310,7 @@ replacement_bytes = [0x6a, 0x33]
 address = 0x005bdfe0
 type = "simple"
 original_bytes =	[0x83, 0xfe, 0x14]
-replacement_bytes = [0x83, 0xfe, "{{max_level}}"]
+replacement_bytes = [0x83, 0xfe, 0x32]
 
 # CSWGuiInGameCharacter::StartAutoLevelup
 [[hooks]]
@@ -377,7 +377,7 @@ replacement_bytes = [
 address = 0x005bd0a3
 type = "simple"
 original_bytes =	[0x83, 0xfe, 0x14]
-replacement_bytes = [0x83, 0xfe, "{{max_level}}"]
+replacement_bytes = [0x83, 0xfe, 0x32]
 
 # CSWClass::LoadSavingThrowTable
 # Saving throw limit currently at 60 levels
@@ -393,7 +393,7 @@ replacement_bytes = [0x83, 0xfe, "{{max_level}}"]
 address = 0x005a6fa1
 type = "simple"
 original_bytes =	[0x83, 0xfe, 0x14]
-replacement_bytes = [0x83, 0xfe, "{{max_level}}"]
+replacement_bytes = [0x83, 0xfe, 0x32]
 
 [[hooks]]
 address = 0x005a6fa6
@@ -408,7 +408,7 @@ replacement_bytes = [
 address = 0x005a6fb9
 type = "simple"
 original_bytes =	[0x83, 0xfe, 0x14]
-replacement_bytes = [0x83, 0xfe, "{{max_level}}"]
+replacement_bytes = [0x83, 0xfe, 0x32]
 
 [[hooks]]
 address = 0x005a6fc0
@@ -436,7 +436,7 @@ replacement_bytes = [
 address = 0x005bcd38
 type = "simple"
 original_bytes =	[0x3c, 0x14]
-replacement_bytes = [0x3c, "{{max_level}}"]
+replacement_bytes = [0x3c, 0x32]
 
 [[hooks]]
 address = 0x005bcd3f
@@ -472,7 +472,7 @@ replacement_bytes = [
 address = 0x005bcd68
 type = "simple"
 original_bytes =	[0x3c, 0x14]
-replacement_bytes = [0x3c, "{{max_level}}"]
+replacement_bytes = [0x3c, 0x32]
 
 [[hooks]]
 address = 0x005bcd73
@@ -490,7 +490,7 @@ replacement_bytes = [
 address = 0x0064902e
 type = "simple"
 original_bytes =	[0x83, 0xfe, 0x14]
-replacement_bytes = [0x83, 0xfe, "{{max_level}}"]
+replacement_bytes = [0x83, 0xfe, 0x32]
 
 [[hooks]]
 address = 0x00649033
@@ -507,7 +507,7 @@ replacement_bytes = [
 address = 0x00649046
 type = "simple"
 original_bytes =	[0x83, 0xfe, 0x14]
-replacement_bytes = [0x83, 0xfe, "{{max_level}}"]
+replacement_bytes = [0x83, 0xfe, 0x32]
 
 [[hooks]]
 address = 0x0064904c

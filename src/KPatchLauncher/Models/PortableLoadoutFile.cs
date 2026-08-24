@@ -13,8 +13,6 @@ public sealed class PortableLoadoutFile
     public string Name { get; set; } = "Exported";
     public string GameKey { get; set; } = "unknown";
     public List<string> PatchIds { get; set; } = new();
-    public Dictionary<string, Dictionary<string, int>> OptionValues { get; set; } =
-        new(StringComparer.OrdinalIgnoreCase);
 
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
@@ -51,7 +49,6 @@ public sealed class PortableLoadoutFile
 
             file.Name = string.IsNullOrWhiteSpace(file.Name) ? "Imported" : file.Name.Trim();
             file.GameKey = string.IsNullOrWhiteSpace(file.GameKey) ? "unknown" : file.GameKey.Trim();
-            file.OptionValues ??= new Dictionary<string, Dictionary<string, int>>(StringComparer.OrdinalIgnoreCase);
             return file;
         }
         catch (Exception ex)
@@ -67,8 +64,7 @@ public sealed class PortableLoadoutFile
             SchemaVersion = CurrentSchemaVersion,
             Name = loadout.Name,
             GameKey = loadout.GameKey,
-            PatchIds = loadout.PatchIds.ToList(),
-            OptionValues = CloneOptionValues(loadout.OptionValues)
+            PatchIds = loadout.PatchIds.ToList()
         };
 
     public PatchLoadout ToLoadout() =>
@@ -77,16 +73,6 @@ public sealed class PortableLoadoutFile
             Name = Name,
             GameKey = GameKey,
             PatchIds = PatchIds.ToList(),
-            OptionValues = CloneOptionValues(OptionValues),
             UpdatedAt = DateTimeOffset.UtcNow
         };
-
-    private static Dictionary<string, Dictionary<string, int>> CloneOptionValues(
-        Dictionary<string, Dictionary<string, int>> source)
-    {
-        var map = new Dictionary<string, Dictionary<string, int>>(StringComparer.OrdinalIgnoreCase);
-        foreach (var (patchId, opts) in source)
-            map[patchId] = new Dictionary<string, int>(opts, StringComparer.OrdinalIgnoreCase);
-        return map;
-    }
 }

@@ -18,12 +18,6 @@ public sealed class PatchConfig
     public List<EnabledPatch> Patches { get; init; } = new();
 
     /// <summary>
-    /// Per-patch resolved option values written as [options.&lt;patch-id&gt;] tables.
-    /// </summary>
-    public Dictionary<string, Dictionary<string, int>> PatchOptions { get; init; } =
-        new(StringComparer.OrdinalIgnoreCase);
-
-    /// <summary>
     /// Represents a single enabled patch in the configuration
     /// </summary>
     public sealed class EnabledPatch

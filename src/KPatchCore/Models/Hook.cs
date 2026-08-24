@@ -55,13 +55,7 @@ public sealed class Hook
     /// For Replace: Can be any length, executed then JMP back
     /// Not used for Detour hooks
     /// </summary>
-    public byte[]? ReplacementBytes { get; set; }
-
-    /// <summary>
-    /// Parallel to <see cref="ReplacementBytes"/>: non-null entries are option IDs
-    /// (from "{{option_id}}" templates) to resolve at install time.
-    /// </summary>
-    public string?[]? ReplacementTemplates { get; set; }
+    public byte[]? ReplacementBytes { get; init; }
 
     /// <summary>
     /// Hook type (Detour, Simple, or Replace)

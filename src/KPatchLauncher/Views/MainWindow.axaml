@@ -397,36 +397,6 @@
                                         </Border>
                                     </StackPanel>
 
-                                    <!-- Options -->
-                                    <StackPanel Classes="hud-section"
-                                                IsVisible="{Binding SelectedPatch.HasOptions}">
-                                        <TextBlock Text="OPTIONS" Classes="section-title"/>
-                                        <Border Classes="section-rule"/>
-                                        <Border Classes="section-inset">
-                                            <ItemsControl ItemsSource="{Binding SelectedPatch.Options}">
-                                                <ItemsControl.ItemTemplate>
-                                                    <DataTemplate x:DataType="vm:PatchOptionItemViewModel">
-                                                        <Grid ColumnDefinitions="*,Auto" Margin="0,0,0,8">
-                                                            <StackPanel>
-                                                                <TextBlock Text="{Binding DisplayName}" Classes="caption"/>
-                                                                <TextBlock Text="{Binding Description}"
-                                                                           TextWrapping="Wrap"
-                                                                           FontSize="12"
-                                                                           Opacity="0.8"/>
-                                                            </StackPanel>
-                                                            <NumericUpDown Grid.Column="1"
-                                                                           Value="{Binding Value}"
-                                                                           Minimum="{Binding Min}"
-                                                                           Maximum="{Binding Max}"
-                                                                           Width="100"
-                                                                           FormatString="0"/>
-                                                        </Grid>
-                                                    </DataTemplate>
-                                                </ItemsControl.ItemTemplate>
-                                            </ItemsControl>
-                                        </Border>
-                                    </StackPanel>
-
                                     <!-- Dependencies -->
                                     <StackPanel Classes="hud-section"
                                                 IsVisible="{Binding SelectedPatch.HasDependencies}">

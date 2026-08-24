@@ -85,7 +85,6 @@ public static class ManifestParser
             TryGetString(patchTable, "url", out var url);
             TryGetString(patchTable, "license", out var license);
             var tags = TryGetStringArray(patchTable, "tags") ?? new List<string>();
-            var options = ParseOptions(patchTable);
 
             var manifest = new PatchManifest
             {
@@ -97,7 +96,6 @@ public static class ManifestParser
                 Requires = requires,
                 Conflicts = conflicts,
                 SupportedVersions = supportedVersions,
-                Options = options,
                 Tags = tags,
                 Url = string.IsNullOrWhiteSpace(url) ? null : url,
                 License = string.IsNullOrWhiteSpace(license) ? null : license
@@ -138,62 +136,5 @@ public static class ManifestParser
         }
 
         return result;
-    }
-
-    private static List<PatchOption> ParseOptions(TomlTable patchTable)
-    {
-        var options = new List<PatchOption>();
-        if (!patchTable.TryGetValue("options", out var optionsObj) || optionsObj is not TomlTableArray optionsArray)
-            return options;
-
-        foreach (var entry in optionsArray)
-        {
-            if (entry is not TomlTable optionTable)
-                continue;
-
-            if (!TryGetString(optionTable, "id", out var optionId))
-                continue;
-            if (!TryGetString(optionTable, "type", out var type))
-                type = "integer";
-            if (!TryGetString(optionTable, "display_name", out var displayName))
-                displayName = optionId;
-            TryGetString(optionTable, "description", out var description);
-
-            var defaultVal = 0;
-            if (optionTable.TryGetValue("default", out var defObj))
-            {
-                if (defObj is long l) defaultVal = (int)l;
-                else if (defObj is int i) defaultVal = i;
-            }
-
-            int? min = null;
-            int? max = null;
-            if (optionTable.TryGetValue("min", out var minObj))
-            {
-                if (minObj is long l) min = (int)l;
-                else if (minObj is int i) min = i;
-            }
-            if (optionTable.TryGetValue("max", out var maxObj))
-            {
-                if (maxObj is long l) max = (int)l;
-                else if (maxObj is int i) max = i;
-            }
-
-            TryGetString(optionTable, "expression", out var expression);
-
-            options.Add(new PatchOption
-            {
-                Id = optionId,
-                Type = type,
-                DisplayName = displayName,
-                Description = description ?? string.Empty,
-                Default = defaultVal,
-                Min = min,
-                Max = max,
-                Expression = string.IsNullOrWhiteSpace(expression) ? null : expression
-            });
-        }
-
-        return options;
     }
 }

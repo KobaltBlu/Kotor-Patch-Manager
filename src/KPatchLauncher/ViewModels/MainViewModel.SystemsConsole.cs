@@ -386,7 +386,6 @@ public partial class MainViewModel
 
         target.GameKey = gameKey;
         target.PatchIds = GetPreferredCheckedPatchIds(compatibleOnly: false);
-        target.OptionValues = CaptureOptionValues();
         target.UpdatedAt = DateTimeOffset.UtcNow;
 
         if (!LoadoutStore.TrySave(_loadoutData, out var error))
@@ -454,7 +453,6 @@ public partial class MainViewModel
             Name = copyName,
             GameKey = _activeLoadout.GameKey,
             PatchIds = _activeLoadout.PatchIds.ToList(),
-            OptionValues = CloneOptionValues(_activeLoadout.OptionValues),
             UpdatedAt = DateTimeOffset.UtcNow
         };
 
@@ -501,8 +499,7 @@ public partial class MainViewModel
                 SchemaVersion = PortableLoadoutFile.CurrentSchemaVersion,
                 Name = name,
                 GameKey = CurrentGameKey(),
-                PatchIds = GetPreferredCheckedPatchIds(compatibleOnly: false),
-                OptionValues = CaptureOptionValues()
+                PatchIds = GetPreferredCheckedPatchIds(compatibleOnly: false)
             };
 
             var safeName = string.Join("_", name.Split(Path.GetInvalidFileNameChars()));
@@ -636,28 +633,6 @@ public partial class MainViewModel
         return candidate;
     }
 
-    private static Dictionary<string, Dictionary<string, int>> CloneOptionValues(
-        Dictionary<string, Dictionary<string, int>> source)
-    {
-        var map = new Dictionary<string, Dictionary<string, int>>(StringComparer.OrdinalIgnoreCase);
-        foreach (var (patchId, opts) in source)
-            map[patchId] = new Dictionary<string, int>(opts, StringComparer.OrdinalIgnoreCase);
-        return map;
-    }
-
-    private Dictionary<string, Dictionary<string, int>> CaptureOptionValues()
-    {
-        var map = new Dictionary<string, Dictionary<string, int>>(StringComparer.OrdinalIgnoreCase);
-        foreach (var patch in AllPatches.Where(p => p.HasOptions))
-        {
-            var opts = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
-            foreach (var opt in patch.Options)
-                opts[opt.Id] = opt.IntValue;
-            map[patch.Id] = opts;
-        }
-        return map;
-    }
-
     private void RecomputeLoadoutDirty()
     {
         if (_activeLoadout == null)
@@ -669,47 +644,8 @@ public partial class MainViewModel
         var currentIds = GetPreferredCheckedPatchIds(compatibleOnly: false);
         var savedIds = _activeLoadout.PatchIds;
 
-        if (currentIds.Count != savedIds.Count ||
-            !currentIds.SequenceEqual(savedIds, StringComparer.OrdinalIgnoreCase))
-        {
-            IsLoadoutDirty = true;
-            return;
-        }
-
-        var currentOpts = CaptureOptionValues();
-        IsLoadoutDirty = !OptionMapsEqual(currentOpts, _activeLoadout.OptionValues);
-    }
-
-    private static bool OptionMapsEqual(
-        Dictionary<string, Dictionary<string, int>> a,
-        Dictionary<string, Dictionary<string, int>> b)
-    {
-        var aKeys = a.Keys.ToHashSet(StringComparer.OrdinalIgnoreCase);
-        var bKeys = b.Keys.ToHashSet(StringComparer.OrdinalIgnoreCase);
-        foreach (var key in aKeys.Union(bKeys))
-        {
-            a.TryGetValue(key, out var ao);
-            b.TryGetValue(key, out var bo);
-            ao ??= new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
-            bo ??= new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
-            if (!IntMapsEqual(ao, bo))
-                return false;
-        }
-
-        return true;
-    }
-
-    private static bool IntMapsEqual(Dictionary<string, int> a, Dictionary<string, int> b)
-    {
-        if (a.Count != b.Count)
-            return false;
-        foreach (var (k, v) in a)
-        {
-            if (!b.TryGetValue(k, out var other) || other != v)
-                return false;
-        }
-
-        return true;
+        IsLoadoutDirty = currentIds.Count != savedIds.Count ||
+            !currentIds.SequenceEqual(savedIds, StringComparer.OrdinalIgnoreCase);
     }
 
     private void ApplyLoadout(PatchLoadout loadout, bool markClean = true)
@@ -723,14 +659,6 @@ public partial class MainViewModel
                 if (patch.IsOrphaned)
                     continue;
                 patch.IsChecked = ids.Contains(patch.Id);
-                if (loadout.OptionValues.TryGetValue(patch.Id, out var opts))
-                {
-                    foreach (var opt in patch.Options)
-                    {
-                        if (opts.TryGetValue(opt.Id, out var v))
-                            opt.Value = v;
-                    }
-                }
             }
         }
         finally
