@@ -26,4 +26,10 @@ public sealed class WindowDialogService : IDialogService
         dialog.Configure(title, message, "OK", null, isError: true);
         await dialog.ShowDialog<bool>(_owner);
     }
+
+    public async Task ShowAboutAsync()
+    {
+        var dialog = new AboutWindow();
+        await dialog.ShowDialog(_owner);
+    }
 }

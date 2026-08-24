@@ -69,6 +69,14 @@ public partial class MainWindow : Window
         if (DataContext is not MainViewModel vm)
             return;
 
+        if (e.Key == Key.F1)
+        {
+            if (vm.OpenAboutCommand.CanExecute(null))
+                vm.OpenAboutCommand.Execute(null);
+            e.Handled = true;
+            return;
+        }
+
         if (e.KeyModifiers == KeyModifiers.Control && e.Key == Key.L)
         {
             if (vm.LaunchGameCommand.CanExecute(null))

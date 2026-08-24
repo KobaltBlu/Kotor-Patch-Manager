@@ -102,6 +102,11 @@
                             VerticalAlignment="Center"
                             Margin="0,0,8,0">
                     <Button Classes="chrome"
+                            Content="ABOUT"
+                            Width="56"
+                            Command="{Binding OpenAboutCommand}"
+                            ToolTip.Tip="About (F1)"/>
+                    <Button Classes="chrome"
                             Content="—"
                             Click="OnMinimize"
                             ToolTip.Tip="Minimize"/>

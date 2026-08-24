@@ -76,6 +76,7 @@ public partial class MainViewModel : ViewModelBase
         LaunchGameCommand = new SimpleCommand(async () => await LaunchGame(), () => HasValidGamePath);
         SelectPatchCommand = new SimpleCommand(p => SelectPatchById(p as string));
         OpenUrlCommand = new SimpleCommand(p => OpenUrl(p as string));
+        OpenAboutCommand = new SimpleCommand(async () => await OpenAboutAsync());
 
         InitSystemsConsole();
 
@@ -357,8 +358,17 @@ public partial class MainViewModel : ViewModelBase
     public ICommand LaunchGameCommand { get; }
     public ICommand SelectPatchCommand { get; }
     public ICommand OpenUrlCommand { get; }
+    public ICommand OpenAboutCommand { get; }
 
     private bool IsInstalled(string patchId) => _installedPatchIds.Contains(patchId);
+
+    private async Task OpenAboutAsync()
+    {
+        if (Dialogs == null)
+            return;
+
+        await Dialogs.ShowAboutAsync();
+    }
 
     private async Task BrowseGame()
     {

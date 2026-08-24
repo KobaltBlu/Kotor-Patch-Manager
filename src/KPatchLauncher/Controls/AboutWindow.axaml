@@ -1,0 +1,129 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:controls="using:KPatchLauncher.Controls"
+        xmlns:vm="using:KPatchLauncher.ViewModels"
+        x:Class="KPatchLauncher.Controls.AboutWindow"
+        x:DataType="vm:AboutViewModel"
+        Title="About"
+        Width="520"
+        SizeToContent="Height"
+        CanResize="False"
+        WindowStartupLocation="CenterOwner"
+        SystemDecorations="None"
+        Background="{DynamicResource BackgroundBrush}"
+        Foreground="{DynamicResource PrimaryBrush}"
+        ShowInTaskbar="False">
+    <controls:HudPanel Header="ABOUT" Margin="0">
+        <DockPanel>
+            <StackPanel DockPanel.Dock="Bottom"
+                        Orientation="Horizontal"
+                        HorizontalAlignment="Right"
+                        Margin="0,16,0,0">
+                <Button Content="CLOSE"
+                        Classes="primary"
+                        MinWidth="110"
+                        Click="OnClose"/>
+            </StackPanel>
+
+            <ScrollViewer MaxHeight="520"
+                          VerticalScrollBarVisibility="Auto"
+                          AllowAutoHide="False">
+                <StackPanel Spacing="0">
+                    <!-- Identity -->
+                    <StackPanel Classes="hud-section">
+                        <TextBlock Text="IDENTITY" Classes="section-title"/>
+                        <Border Classes="section-rule"/>
+                        <Border Classes="section-inset">
+                            <StackPanel Spacing="10">
+                                <StackPanel>
+                                    <TextBlock Text="{Binding ProductName}"
+                                               Classes="display"
+                                               FontSize="18"
+                                               Foreground="{DynamicResource AccentBrush}"/>
+                                    <TextBlock Text="{Binding VersionDisplay}"
+                                               Classes="mono"
+                                               FontSize="13"
+                                               Margin="0,4,0,0"/>
+                                </StackPanel>
+                                <TextBlock Text="{Binding Description}"
+                                           TextWrapping="Wrap"
+                                           Opacity="0.9"/>
+                                <TextBlock Text="{Binding Disclaimer}"
+                                           TextWrapping="Wrap"
+                                           FontSize="12"
+                                           Foreground="{DynamicResource CaptionBrush}"/>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+
+                    <!-- Credits -->
+                    <StackPanel Classes="hud-section">
+                        <TextBlock Text="CREDITS" Classes="section-title"/>
+                        <Border Classes="section-rule"/>
+                        <Border Classes="section-inset">
+                            <StackPanel Spacing="10">
+                                <StackPanel>
+                                    <TextBlock Text="COPYRIGHT" Classes="caption"/>
+                                    <TextBlock Text="{Binding Copyright}" TextWrapping="Wrap"/>
+                                </StackPanel>
+                                <StackPanel>
+                                    <TextBlock Text="LICENSE" Classes="caption"/>
+                                    <Button Classes="link"
+                                            Content="{Binding LicenseName}"
+                                            Command="{Binding OpenUrlCommand}"
+                                            CommandParameter="{Binding LicenseUrl}"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+
+                    <!-- Links -->
+                    <StackPanel Classes="hud-section">
+                        <TextBlock Text="LINKS" Classes="section-title"/>
+                        <Border Classes="section-rule"/>
+                        <Border Classes="section-inset">
+                            <StackPanel Spacing="8">
+                                <StackPanel>
+                                    <TextBlock Text="REPOSITORY" Classes="caption"/>
+                                    <Button Classes="link"
+                                            Content="GitHub"
+                                            Command="{Binding OpenUrlCommand}"
+                                            CommandParameter="{Binding RepositoryUrl}"/>
+                                </StackPanel>
+                                <StackPanel>
+                                    <TextBlock Text="RELEASES" Classes="caption"/>
+                                    <Button Classes="link"
+                                            Content="Download releases"
+                                            Command="{Binding OpenUrlCommand}"
+                                            CommandParameter="{Binding ReleasesUrl}"/>
+                                </StackPanel>
+                                <StackPanel>
+                                    <TextBlock Text="ISSUES" Classes="caption"/>
+                                    <Button Classes="link"
+                                            Content="Report a problem"
+                                            Command="{Binding OpenUrlCommand}"
+                                            CommandParameter="{Binding IssuesUrl}"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+
+                    <!-- Runtime -->
+                    <StackPanel Classes="hud-section">
+                        <TextBlock Text="RUNTIME" Classes="section-title"/>
+                        <Border Classes="section-rule"/>
+                        <Border Classes="section-inset">
+                            <StackPanel>
+                                <TextBlock Text="ENVIRONMENT" Classes="caption"/>
+                                <TextBlock Text="{Binding RuntimeSummary}"
+                                           Classes="mono"
+                                           FontSize="12"
+                                           TextWrapping="Wrap"/>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </StackPanel>
+            </ScrollViewer>
+        </DockPanel>
+    </controls:HudPanel>
+</Window>
