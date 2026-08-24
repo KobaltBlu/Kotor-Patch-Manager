@@ -23,7 +23,7 @@ public sealed class WindowDialogService : IDialogService
     public async Task ShowErrorAsync(string title, string message)
     {
         var dialog = new HudDialog();
-        dialog.Configure(title, message, "ACK", null, isError: true);
+        dialog.Configure(title, message, "OK", null, isError: true);
         await dialog.ShowDialog<bool>(_owner);
     }
 }
