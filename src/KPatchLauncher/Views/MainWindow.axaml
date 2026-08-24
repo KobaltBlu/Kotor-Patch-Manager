@@ -278,7 +278,8 @@
                                        IsVisible="{Binding HasEmptyLibrary}"/>
                             <ListBox ItemsSource="{Binding VisiblePatches}"
                                      SelectedItem="{Binding SelectedPatch}"
-                                     ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                                     ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                                     ScrollViewer.AllowAutoHide="False">
                                 <ListBox.ItemTemplate>
                                     <DataTemplate x:DataType="vm:PatchItemViewModel">
                                         <Grid ColumnDefinitions="Auto,*,Auto"
@@ -312,6 +313,7 @@
                     <controls:HudPanel Grid.Column="1" Header="PATCH DETAILS">
                         <Grid>
                             <ScrollViewer VerticalScrollBarVisibility="Auto"
+                                          AllowAutoHide="False"
                                           IsVisible="{Binding SelectedPatch, Converter={x:Static ObjectConverters.IsNotNull}}">
                                 <StackPanel>
                                     <!-- Identity -->
@@ -514,7 +516,7 @@
                             BorderBrush="{DynamicResource PrimaryBrush}">
                         <Grid ColumnDefinitions="*,Auto">
                             <StackPanel>
-                                <TextBlock Text="HEALTH" Classes="caption"/>
+                                <TextBlock Text="STATUS" Classes="caption"/>
                                 <TextBlock Text="{Binding HealthSummary}"
                                            Classes="mono"
                                            FontSize="12"

@@ -250,7 +250,7 @@
     </Style>
 
     <Style Selector="ListBoxItem">
-        <Setter Property="Padding" Value="6,5"/>
+        <Setter Property="Padding" Value="6,5,6,5"/>
         <Setter Property="Background" Value="Transparent"/>
         <Setter Property="MinHeight" Value="32"/>
     </Style>
@@ -268,6 +268,13 @@
 
     <Style Selector="ScrollViewer">
         <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="AllowAutoHide" Value="False"/>
+    </Style>
+    <Style Selector="ListBox /template/ ScrollViewer#PART_ScrollViewer">
+        <Setter Property="AllowAutoHide" Value="False"/>
+    </Style>
+    <Style Selector="ScrollBar">
+        <Setter Property="AllowAutoHide" Value="False"/>
     </Style>
     <Style Selector="ScrollBar:vertical">
         <Setter Property="MinWidth" Value="{DynamicResource ScrollBarSize}"/>
@@ -301,7 +308,7 @@
         <Setter Property="BorderBrush" Value="{DynamicResource PrimaryBrush}"/>
         <Setter Property="BorderThickness" Value="1"/>
         <Setter Property="Padding" Value="6,1"/>
-        <Setter Property="Margin" Value="4,0,0,0"/>
+        <Setter Property="Margin" Value="4,0,2,0"/>
         <Setter Property="VerticalAlignment" Value="Center"/>
     </Style>
     <Style Selector="Border.badge TextBlock">
