@@ -1,4 +1,4 @@
-namespace KPatchLauncher.Models;
+﻿namespace KPatchLauncher.Models;
 
 /// <summary>
 /// A named set of patches (and option values) for a game target.
@@ -12,6 +12,7 @@ public sealed class PatchLoadout
     public List<string> PatchIds { get; set; } = new();
     /// <summary>patchId -> optionId -> value</summary>
     public Dictionary<string, Dictionary<string, int>> OptionValues { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+    public DateTimeOffset UpdatedAt { get; set; } = DateTimeOffset.UtcNow;
 }
 
 /// <summary>

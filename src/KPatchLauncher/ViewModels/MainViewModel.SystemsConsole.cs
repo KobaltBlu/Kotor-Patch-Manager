@@ -15,6 +15,9 @@ public partial class MainViewModel
     private string _healthSummary = "Health unknown";
     private string _healthDetail = string.Empty;
     private bool _healthOk = true;
+    private bool _isLoadoutDirty;
+    private bool _suppressLoadoutSelection;
+    private bool _loadoutSwitchInProgress;
 
     public ObservableCollection<PatchLoadout> AvailableLoadouts { get; } = new();
 
@@ -23,24 +26,62 @@ public partial class MainViewModel
         get => _activeLoadout;
         set
         {
-            if (SetProperty(ref _activeLoadout, value))
+            if (_suppressLoadoutSelection)
             {
-                _settings.ActiveLoadoutId = value?.Id;
-                _settings.Save();
-                if (value != null)
-                    ApplyLoadout(value);
-                OnPropertyChanged(nameof(ActiveLoadoutName));
+                if (SetProperty(ref _activeLoadout, value))
+                    OnActiveLoadoutMetaChanged();
+                return;
             }
+
+            if (ReferenceEquals(_activeLoadout, value))
+                return;
+
+            if (_loadoutSwitchInProgress)
+                return;
+
+            if (_activeLoadout != null && IsLoadoutDirty)
+            {
+                _ = SwitchLoadoutWithConfirmAsync(value);
+                OnPropertyChanged(nameof(ActiveLoadout));
+                return;
+            }
+
+            CommitActiveLoadout(value, applyChecks: value != null);
         }
     }
 
     public string ActiveLoadoutName => ActiveLoadout?.Name ?? "None";
+
+    public string ActiveLoadoutDisplayName =>
+        ActiveLoadout == null
+            ? "None"
+            : IsLoadoutDirty
+                ? $"{ActiveLoadout.Name} *"
+                : ActiveLoadout.Name;
 
     public string NewLoadoutName
     {
         get => _newLoadoutName;
         set => SetProperty(ref _newLoadoutName, value);
     }
+
+    public bool IsLoadoutDirty
+    {
+        get => _isLoadoutDirty;
+        private set
+        {
+            if (SetProperty(ref _isLoadoutDirty, value))
+            {
+                OnPropertyChanged(nameof(ActiveLoadoutDisplayName));
+                OnPropertyChanged(nameof(LoadoutDirtyHint));
+            }
+        }
+    }
+
+    public string LoadoutDirtyHint =>
+        IsLoadoutDirty ? "Loadout edited — SAVE to keep, or switch to discard" : string.Empty;
+
+    public bool HasActiveLoadout => ActiveLoadout != null;
 
     public bool IsKotor1Target =>
         _detectedGameVersion?.Title == GameTitle.KOTOR1
@@ -111,6 +152,12 @@ public partial class MainViewModel
         RefreshLoadoutList();
 
         SaveLoadoutCommand = new SimpleCommand(SaveCurrentAsLoadout, () => CanEditPaths);
+        DeleteLoadoutCommand = new SimpleCommand(async () => await DeleteActiveLoadoutAsync(),
+            () => CanEditPaths && HasActiveLoadout);
+        DuplicateLoadoutCommand = new SimpleCommand(DuplicateActiveLoadout,
+            () => CanEditPaths && HasActiveLoadout);
+        ClearLoadoutCommand = new SimpleCommand(ClearActiveLoadout,
+            () => CanEditPaths && HasActiveLoadout);
         SelectKotor1Command = new SimpleCommand(() => SwitchToRememberedTarget(GameTitle.KOTOR1), () => HasKotor1Memory);
         SelectKotor2Command = new SimpleCommand(() => SwitchToRememberedTarget(GameTitle.KOTOR2), () => HasKotor2Memory);
         RepairStagingCommand = new SimpleCommand(async () => await ApplyPatches(skipEmptyConfirm: true),
@@ -120,24 +167,134 @@ public partial class MainViewModel
         {
             var match = AvailableLoadouts.FirstOrDefault(l => l.Id == _settings.ActiveLoadoutId);
             if (match != null)
-                _activeLoadout = match;
+            {
+                _suppressLoadoutSelection = true;
+                try
+                {
+                    _activeLoadout = match;
+                    NewLoadoutName = match.Name;
+                }
+                finally
+                {
+                    _suppressLoadoutSelection = false;
+                }
+            }
         }
     }
 
     public System.Windows.Input.ICommand SaveLoadoutCommand { get; private set; } = null!;
+    public System.Windows.Input.ICommand DeleteLoadoutCommand { get; private set; } = null!;
+    public System.Windows.Input.ICommand DuplicateLoadoutCommand { get; private set; } = null!;
+    public System.Windows.Input.ICommand ClearLoadoutCommand { get; private set; } = null!;
     public System.Windows.Input.ICommand SelectKotor1Command { get; private set; } = null!;
     public System.Windows.Input.ICommand SelectKotor2Command { get; private set; } = null!;
     public System.Windows.Input.ICommand RepairStagingCommand { get; private set; } = null!;
 
+    private void OnActiveLoadoutMetaChanged()
+    {
+        _settings.ActiveLoadoutId = _activeLoadout?.Id;
+        _settings.Save();
+        OnPropertyChanged(nameof(ActiveLoadoutName));
+        OnPropertyChanged(nameof(ActiveLoadoutDisplayName));
+        OnPropertyChanged(nameof(HasActiveLoadout));
+        RaiseLoadoutCommandsCanExecute();
+        RecomputeLoadoutDirty();
+    }
+
+    private void CommitActiveLoadout(PatchLoadout? value, bool applyChecks)
+    {
+        if (!SetProperty(ref _activeLoadout, value))
+        {
+            OnActiveLoadoutMetaChanged();
+            return;
+        }
+
+        _settings.ActiveLoadoutId = value?.Id;
+        _settings.Save();
+        if (value != null)
+            NewLoadoutName = value.Name;
+
+        OnPropertyChanged(nameof(ActiveLoadoutName));
+        OnPropertyChanged(nameof(ActiveLoadoutDisplayName));
+        OnPropertyChanged(nameof(HasActiveLoadout));
+        RaiseLoadoutCommandsCanExecute();
+
+        if (applyChecks && value != null)
+            ApplyLoadout(value, markClean: true);
+        else
+            RecomputeLoadoutDirty();
+
+        RememberCurrentTarget();
+    }
+
+    private async Task SwitchLoadoutWithConfirmAsync(PatchLoadout? requested)
+    {
+        if (_loadoutSwitchInProgress)
+            return;
+
+        _loadoutSwitchInProgress = true;
+        try
+        {
+            var confirmed = Dialogs == null || await Dialogs.ConfirmAsync(
+                "DISCARD LOADOUT EDITS?",
+                "Current checklist differs from the selected loadout. Switch and discard edits?",
+                "SWITCH",
+                "CANCEL");
+
+            if (!confirmed)
+            {
+                OnPropertyChanged(nameof(ActiveLoadout));
+                return;
+            }
+
+            CommitActiveLoadout(requested, applyChecks: requested != null);
+        }
+        finally
+        {
+            _loadoutSwitchInProgress = false;
+        }
+    }
+
+    private void RaiseLoadoutCommandsCanExecute()
+    {
+        if (SaveLoadoutCommand is SimpleCommand save)
+            save.RaiseCanExecuteChanged();
+        if (DeleteLoadoutCommand is SimpleCommand del)
+            del.RaiseCanExecuteChanged();
+        if (DuplicateLoadoutCommand is SimpleCommand dup)
+            dup.RaiseCanExecuteChanged();
+        if (ClearLoadoutCommand is SimpleCommand clr)
+            clr.RaiseCanExecuteChanged();
+    }
+
     private void RefreshLoadoutList()
     {
+        var previousId = _activeLoadout?.Id ?? _settings.ActiveLoadoutId;
         AvailableLoadouts.Clear();
         var key = CurrentGameKey();
         foreach (var loadout in _loadoutData.Loadouts
-                     .Where(l => l.GameKey == key || l.GameKey == "unknown" || key == "unknown")
+                     .Where(l => l.GameKey == key)
                      .OrderBy(l => l.Name))
         {
             AvailableLoadouts.Add(loadout);
+        }
+
+        if (previousId == null)
+            return;
+
+        var stillVisible = AvailableLoadouts.FirstOrDefault(l => l.Id == previousId);
+        if (stillVisible == null && _activeLoadout != null)
+        {
+            _suppressLoadoutSelection = true;
+            try
+            {
+                _activeLoadout = null;
+                OnActiveLoadoutMetaChanged();
+            }
+            finally
+            {
+                _suppressLoadoutSelection = false;
+            }
         }
     }
 
@@ -169,27 +326,169 @@ public partial class MainViewModel
 
     private void SaveCurrentAsLoadout()
     {
-        var name = string.IsNullOrWhiteSpace(NewLoadoutName) ? "Loadout" : NewLoadoutName.Trim();
-        var loadout = new PatchLoadout
+        var gameKey = CurrentGameKey();
+        var typedName = NewLoadoutName?.Trim() ?? string.Empty;
+
+        PatchLoadout target;
+        string statusVerb;
+
+        if (_activeLoadout != null &&
+            (string.IsNullOrWhiteSpace(typedName) ||
+             string.Equals(typedName, _activeLoadout.Name, StringComparison.OrdinalIgnoreCase)))
         {
-            Name = name,
-            GameKey = CurrentGameKey(),
-            PatchIds = AllPatches.Where(p => p.IsChecked && !p.IsOrphaned).Select(p => p.Id).ToList(),
-            OptionValues = CaptureOptionValues()
+            target = _activeLoadout;
+            if (!string.IsNullOrWhiteSpace(typedName))
+                target.Name = typedName;
+            statusVerb = "Updated";
+        }
+        else
+        {
+            var name = string.IsNullOrWhiteSpace(typedName) ? "Loadout" : typedName;
+            var existing = _loadoutData.Loadouts.FirstOrDefault(l =>
+                string.Equals(l.Name, name, StringComparison.OrdinalIgnoreCase)
+                && l.GameKey == gameKey);
+
+            if (existing != null)
+            {
+                target = existing;
+                statusVerb = "Updated";
+            }
+            else if (_activeLoadout != null &&
+                     !string.Equals(typedName, _activeLoadout.Name, StringComparison.OrdinalIgnoreCase))
+            {
+                target = _activeLoadout;
+                target.Name = name;
+                statusVerb = "Renamed and saved";
+            }
+            else
+            {
+                target = new PatchLoadout
+                {
+                    Name = name,
+                    GameKey = gameKey
+                };
+                _loadoutData.Loadouts.Add(target);
+                statusVerb = "Saved";
+            }
+        }
+
+        target.GameKey = gameKey;
+        target.PatchIds = AllPatches.Where(p => p.IsChecked && !p.IsOrphaned).Select(p => p.Id).ToList();
+        target.OptionValues = CaptureOptionValues();
+        target.UpdatedAt = DateTimeOffset.UtcNow;
+
+        if (!LoadoutStore.TrySave(_loadoutData, out var error))
+        {
+            StatusMessage = $"Failed to save loadout: {error}";
+            return;
+        }
+
+        RefreshLoadoutList();
+        _suppressLoadoutSelection = true;
+        try
+        {
+            _activeLoadout = AvailableLoadouts.FirstOrDefault(l => l.Id == target.Id) ?? target;
+            NewLoadoutName = _activeLoadout.Name;
+            OnPropertyChanged(nameof(ActiveLoadout));
+            OnActiveLoadoutMetaChanged();
+        }
+        finally
+        {
+            _suppressLoadoutSelection = false;
+        }
+
+        IsLoadoutDirty = false;
+        RememberCurrentTarget();
+        StatusMessage = $"{statusVerb} loadout '{target.Name}'";
+    }
+
+    private async Task DeleteActiveLoadoutAsync()
+    {
+        if (_activeLoadout == null)
+            return;
+
+        var name = _activeLoadout.Name;
+        var id = _activeLoadout.Id;
+        var confirmed = Dialogs == null || await Dialogs.ConfirmAsync(
+            "DELETE LOADOUT?",
+            $"Remove loadout '{name}'? Checklist is unchanged.",
+            "DELETE",
+            "CANCEL");
+
+        if (!confirmed)
+            return;
+
+        _loadoutData.Loadouts.RemoveAll(l => l.Id == id);
+        if (!LoadoutStore.TrySave(_loadoutData, out var error))
+        {
+            StatusMessage = $"Failed to delete loadout: {error}";
+            return;
+        }
+
+        RefreshLoadoutList();
+        CommitActiveLoadout(null, applyChecks: false);
+        StatusMessage = $"Deleted loadout '{name}'";
+    }
+
+    private void DuplicateActiveLoadout()
+    {
+        if (_activeLoadout == null)
+            return;
+
+        var baseName = _activeLoadout.Name;
+        var copyName = UniqueCopyName(baseName, _activeLoadout.GameKey);
+        var clone = new PatchLoadout
+        {
+            Name = copyName,
+            GameKey = _activeLoadout.GameKey,
+            PatchIds = _activeLoadout.PatchIds.ToList(),
+            OptionValues = CloneOptionValues(_activeLoadout.OptionValues),
+            UpdatedAt = DateTimeOffset.UtcNow
         };
 
-        _loadoutData.Loadouts.RemoveAll(l =>
-            string.Equals(l.Name, name, StringComparison.OrdinalIgnoreCase)
-            && l.GameKey == loadout.GameKey);
-        _loadoutData.Loadouts.Add(loadout);
-        LoadoutStore.Save(_loadoutData);
+        _loadoutData.Loadouts.Add(clone);
+        if (!LoadoutStore.TrySave(_loadoutData, out var error))
+        {
+            StatusMessage = $"Failed to duplicate loadout: {error}";
+            return;
+        }
+
         RefreshLoadoutList();
-        _activeLoadout = AvailableLoadouts.FirstOrDefault(l => l.Id == loadout.Id);
-        OnPropertyChanged(nameof(ActiveLoadout));
-        OnPropertyChanged(nameof(ActiveLoadoutName));
-        _settings.ActiveLoadoutId = _activeLoadout?.Id;
-        _settings.Save();
-        StatusMessage = $"Saved loadout '{name}'";
+        CommitActiveLoadout(AvailableLoadouts.FirstOrDefault(l => l.Id == clone.Id) ?? clone, applyChecks: true);
+        StatusMessage = $"Duplicated loadout as '{copyName}'";
+    }
+
+    private void ClearActiveLoadout()
+    {
+        if (_activeLoadout == null)
+            return;
+
+        CommitActiveLoadout(null, applyChecks: false);
+        StatusMessage = "Loadout selection cleared";
+    }
+
+    private string UniqueCopyName(string baseName, string gameKey)
+    {
+        var candidate = $"{baseName} (copy)";
+        var n = 2;
+        while (_loadoutData.Loadouts.Any(l =>
+                   l.GameKey == gameKey &&
+                   string.Equals(l.Name, candidate, StringComparison.OrdinalIgnoreCase)))
+        {
+            candidate = $"{baseName} (copy {n})";
+            n++;
+        }
+
+        return candidate;
+    }
+
+    private static Dictionary<string, Dictionary<string, int>> CloneOptionValues(
+        Dictionary<string, Dictionary<string, int>> source)
+    {
+        var map = new Dictionary<string, Dictionary<string, int>>(StringComparer.OrdinalIgnoreCase);
+        foreach (var (patchId, opts) in source)
+            map[patchId] = new Dictionary<string, int>(opts, StringComparer.OrdinalIgnoreCase);
+        return map;
     }
 
     private Dictionary<string, Dictionary<string, int>> CaptureOptionValues()
@@ -205,7 +504,67 @@ public partial class MainViewModel
         return map;
     }
 
-    private void ApplyLoadout(PatchLoadout loadout)
+    private void RecomputeLoadoutDirty()
+    {
+        if (_activeLoadout == null)
+        {
+            IsLoadoutDirty = false;
+            return;
+        }
+
+        var currentIds = AllPatches
+            .Where(p => p.IsChecked && !p.IsOrphaned)
+            .Select(p => p.Id)
+            .OrderBy(id => id, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+        var savedIds = _activeLoadout.PatchIds
+            .OrderBy(id => id, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        if (currentIds.Count != savedIds.Count ||
+            !currentIds.SequenceEqual(savedIds, StringComparer.OrdinalIgnoreCase))
+        {
+            IsLoadoutDirty = true;
+            return;
+        }
+
+        var currentOpts = CaptureOptionValues();
+        IsLoadoutDirty = !OptionMapsEqual(currentOpts, _activeLoadout.OptionValues);
+    }
+
+    private static bool OptionMapsEqual(
+        Dictionary<string, Dictionary<string, int>> a,
+        Dictionary<string, Dictionary<string, int>> b)
+    {
+        var aKeys = a.Keys.ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var bKeys = b.Keys.ToHashSet(StringComparer.OrdinalIgnoreCase);
+        foreach (var key in aKeys.Union(bKeys))
+        {
+            a.TryGetValue(key, out var ao);
+            b.TryGetValue(key, out var bo);
+            ao ??= new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+            bo ??= new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+            if (!IntMapsEqual(ao, bo))
+                return false;
+        }
+
+        return true;
+    }
+
+    private static bool IntMapsEqual(Dictionary<string, int> a, Dictionary<string, int> b)
+    {
+        if (a.Count != b.Count)
+            return false;
+        foreach (var (k, v) in a)
+        {
+            if (!b.TryGetValue(k, out var other) || other != v)
+                return false;
+        }
+
+        return true;
+    }
+
+    private void ApplyLoadout(PatchLoadout loadout, bool markClean = true)
     {
         _isBulkUpdatingPatchChecks = true;
         try
@@ -235,7 +594,45 @@ public partial class MainViewModel
         UpdatePendingChanges();
         UpdateSelectAllState();
         UpdateDependencyWarning();
+        if (markClean)
+            IsLoadoutDirty = false;
+        else
+            RecomputeLoadoutDirty();
         StatusMessage = $"Loadout '{loadout.Name}' selected — Apply to stage";
+    }
+
+    private void RestoreActiveLoadoutAfterLibraryLoad()
+    {
+        RefreshLoadoutList();
+
+        var id = _settings.ActiveLoadoutId;
+        if (string.IsNullOrEmpty(id))
+        {
+            RecomputeLoadoutDirty();
+            return;
+        }
+
+        var match = AvailableLoadouts.FirstOrDefault(l => l.Id == id);
+        if (match == null)
+        {
+            RecomputeLoadoutDirty();
+            return;
+        }
+
+        _suppressLoadoutSelection = true;
+        try
+        {
+            _activeLoadout = match;
+            NewLoadoutName = match.Name;
+            OnPropertyChanged(nameof(ActiveLoadout));
+            OnActiveLoadoutMetaChanged();
+        }
+        finally
+        {
+            _suppressLoadoutSelection = false;
+        }
+
+        ApplyLoadout(match, markClean: true);
     }
 
     private void RememberCurrentTarget()
@@ -261,8 +658,10 @@ public partial class MainViewModel
         _settings.Save();
         OnPropertyChanged(nameof(HasKotor1Memory));
         OnPropertyChanged(nameof(HasKotor2Memory));
-        ((SimpleCommand)SelectKotor1Command).RaiseCanExecuteChanged();
-        ((SimpleCommand)SelectKotor2Command).RaiseCanExecuteChanged();
+        if (SelectKotor1Command is SimpleCommand k1)
+            k1.RaiseCanExecuteChanged();
+        if (SelectKotor2Command is SimpleCommand k2)
+            k2.RaiseCanExecuteChanged();
         OnPropertyChanged(nameof(IsKotor1Target));
         OnPropertyChanged(nameof(IsKotor2Target));
     }
@@ -273,17 +672,12 @@ public partial class MainViewModel
         if (memory == null || !File.Exists(memory.GamePath))
             return;
 
+        if (!string.IsNullOrEmpty(memory.ActiveLoadoutId))
+            _settings.ActiveLoadoutId = memory.ActiveLoadoutId;
+
         if (!string.IsNullOrWhiteSpace(memory.PatchesPath))
             PatchesPath = memory.PatchesPath;
         GamePath = memory.GamePath;
-
-        if (!string.IsNullOrEmpty(memory.ActiveLoadoutId))
-        {
-            RefreshLoadoutList();
-            var match = AvailableLoadouts.FirstOrDefault(l => l.Id == memory.ActiveLoadoutId);
-            if (match != null)
-                ActiveLoadout = match;
-        }
 
         StatusMessage = title == GameTitle.KOTOR1 ? "Switched to KotOR 1 target" : "Switched to KotOR 2 target";
     }
@@ -336,7 +730,8 @@ public partial class MainViewModel
         }
 
         OnPropertyChanged(nameof(HasEmptyLibrary));
-        ((SimpleCommand)RepairStagingCommand).RaiseCanExecuteChanged();
+        if (RepairStagingCommand is SimpleCommand repair)
+            repair.RaiseCanExecuteChanged();
     }
 
     private IEnumerable<PatchItemViewModel> ApplyLibrarySort(IEnumerable<PatchItemViewModel> source)

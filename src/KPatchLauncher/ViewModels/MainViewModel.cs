@@ -856,6 +856,7 @@ public partial class MainViewModel : ViewModelBase
         OnPropertyChanged(nameof(PendingChangesMessage));
         OnPropertyChanged(nameof(HasPendingChanges));
         RefreshHealthStatus();
+        RecomputeLoadoutDirty();
     }
 
     private void UpdateInstallStates()
@@ -904,6 +905,10 @@ public partial class MainViewModel : ViewModelBase
         ((SimpleCommand)ApplyPatchesCommand).RaiseCanExecuteChanged();
         ((SimpleCommand)UninstallAllCommand).RaiseCanExecuteChanged();
         ((SimpleCommand)LaunchGameCommand).RaiseCanExecuteChanged();
+        RaiseLoadoutCommandsCanExecute();
+        ((SimpleCommand)SelectKotor1Command).RaiseCanExecuteChanged();
+        ((SimpleCommand)SelectKotor2Command).RaiseCanExecuteChanged();
+        ((SimpleCommand)RepairStagingCommand).RaiseCanExecuteChanged();
     }
 
     private async Task ShowErrorAsync(string title, string message)
@@ -1232,7 +1237,11 @@ public partial class MainViewModel : ViewModelBase
                             opt.Default,
                             opt.Min,
                             opt.Max);
-                        optVm.ValueChanged += (_, _) => UpdatePendingChanges();
+                        optVm.ValueChanged += (_, _) =>
+                        {
+                            UpdatePendingChanges();
+                            RecomputeLoadoutDirty();
+                        };
                         vm.Options.Add(optVm);
                     }
 
@@ -1252,7 +1261,7 @@ public partial class MainViewModel : ViewModelBase
                 // Update compatibility status for loaded patches
                 UpdatePatchCompatibility();
                 UpdateSelectAllState();
-                RefreshLoadoutList();
+                RestoreActiveLoadoutAfterLibraryLoad();
                 OnPropertyChanged(nameof(HasEmptyLibrary));
 
                 SetOperationInProgress(false, $"Loaded {patchViewModels.Count} patches from {Path.GetFileName(directory)}");

@@ -1,4 +1,4 @@
-using System.Text.Json;
+﻿using System.Text.Json;
 
 namespace KPatchLauncher.Models;
 
@@ -36,8 +36,12 @@ public static class LoadoutStore
         }
     }
 
-    public static void Save(StoreData data)
+    /// <summary>
+    /// Writes loadouts to disk. Returns false and an error message on failure.
+    /// </summary>
+    public static bool TrySave(StoreData data, out string? error)
     {
+        error = null;
         try
         {
             var dir = Path.GetDirectoryName(StorePath);
@@ -45,10 +49,15 @@ public static class LoadoutStore
                 Directory.CreateDirectory(dir);
 
             File.WriteAllText(StorePath, JsonSerializer.Serialize(data, JsonOptions));
+            return true;
         }
-        catch
+        catch (Exception ex)
         {
-            // non-critical
+            error = ex.Message;
+            return false;
         }
     }
+
+    /// <summary>Legacy helper; prefer <see cref="TrySave"/>.</summary>
+    public static void Save(StoreData data) => TrySave(data, out _);
 }
