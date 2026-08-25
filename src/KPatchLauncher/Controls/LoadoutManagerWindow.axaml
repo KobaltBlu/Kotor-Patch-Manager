@@ -11,7 +11,7 @@
         WindowStartupLocation="CenterOwner"
         SystemDecorations="None"
         Background="{DynamicResource BackgroundBrush}"
-        Foreground="{DynamicResource PrimaryBrush}"
+        Foreground="{DynamicResource TextBrush}"
         ShowInTaskbar="False">
     <controls:HudPanel Header="LOADOUTS" Margin="0">
         <DockPanel>

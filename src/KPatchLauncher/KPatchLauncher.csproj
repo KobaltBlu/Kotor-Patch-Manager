@@ -66,7 +66,8 @@
 
   <ItemGroup>
     <AvaloniaResource Include="Assets\**" />
-    <AvaloniaResource Include="Themes\**" />
+    <!-- Themes/*.axaml are AvaloniaXaml by default; do not also list them as AvaloniaResource
+         or AssemblyDescriptor throws duplicate key /Themes/... -->
   </ItemGroup>
 
 </Project>

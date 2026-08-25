@@ -8,7 +8,7 @@
         WindowStartupLocation="CenterOwner"
         SystemDecorations="None"
         Background="{DynamicResource BackgroundBrush}"
-        Foreground="{DynamicResource PrimaryBrush}"
+        Foreground="{DynamicResource TextBrush}"
         ShowInTaskbar="False">
     <controls:HudPanel Header="{Binding Title, RelativeSource={RelativeSource AncestorType=Window}}"
                        Margin="0">

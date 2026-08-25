@@ -8,7 +8,7 @@
             <ControlTemplate>
                 <Grid>
                     <Border Background="{DynamicResource PanelFillBrush}"
-                            BorderBrush="{DynamicResource PrimaryBrush}"
+                            BorderBrush="{DynamicResource BorderLineBrush}"
                             BorderThickness="1"
                             CornerRadius="{DynamicResource HudCornerRadius}"/>
 
@@ -58,7 +58,7 @@
                                 </StackPanel>
                             </DockPanel>
                             <Border Height="1"
-                                    Background="{DynamicResource PrimaryBrush}"
+                                    Background="{DynamicResource BorderLineBrush}"
                                     Opacity="0.55"/>
                         </StackPanel>
                         <ContentPresenter Content="{TemplateBinding Content}"
@@ -75,7 +75,7 @@
         <Setter Property="FontFamily" Value="{StaticResource HudBodyFont}"/>
         <Setter Property="FontSize" Value="14"/>
         <Setter Property="Background" Value="{DynamicResource BackgroundBrush}"/>
-        <Setter Property="Foreground" Value="{DynamicResource PrimaryBrush}"/>
+        <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
     </Style>
 
     <Style Selector="TextBlock.display">
@@ -97,30 +97,30 @@
 
     <Style Selector="TextBox">
         <Setter Property="Background" Value="{DynamicResource PanelInsetBrush}"/>
-        <Setter Property="Foreground" Value="{DynamicResource PrimaryBrush}"/>
-        <Setter Property="BorderBrush" Value="{DynamicResource PrimaryBrush}"/>
+        <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource BorderLineBrush}"/>
         <Setter Property="BorderThickness" Value="1"/>
-        <Setter Property="CaretBrush" Value="{DynamicResource AccentBrush}"/>
+        <Setter Property="CaretBrush" Value="{DynamicResource PrimaryBrush}"/>
         <Setter Property="SelectionBrush" Value="{DynamicResource SelectionBackgroundBrush}"/>
         <Setter Property="FontFamily" Value="{StaticResource HudMonoFont}"/>
         <Setter Property="Padding" Value="8,6"/>
     </Style>
     <Style Selector="TextBox /template/ Border#PART_BorderElement">
-        <Setter Property="BorderBrush" Value="{DynamicResource PrimaryBrush}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource BorderLineBrush}"/>
         <Setter Property="BorderThickness" Value="1"/>
         <Setter Property="Background" Value="{DynamicResource PanelInsetBrush}"/>
         <Setter Property="CornerRadius" Value="{DynamicResource HudCornerRadius}"/>
     </Style>
     <Style Selector="TextBox:focus /template/ Border#PART_BorderElement">
-        <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource SelectionBorderBrush}"/>
         <Setter Property="BorderThickness" Value="1"/>
     </Style>
     <Style Selector="TextBox:pointerover /template/ Border#PART_BorderElement">
-        <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource SelectionBorderBrush}"/>
     </Style>
     <Style Selector="TextBox:focus">
-        <Setter Property="Foreground" Value="{DynamicResource AccentBrush}"/>
-        <Setter Property="CaretBrush" Value="{DynamicResource AccentBrush}"/>
+        <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
+        <Setter Property="CaretBrush" Value="{DynamicResource PrimaryBrush}"/>
     </Style>
     <Style Selector="TextBox:disabled">
         <Setter Property="Opacity" Value="0.45"/>
@@ -128,8 +128,8 @@
 
     <Style Selector="Button">
         <Setter Property="Background" Value="{DynamicResource PanelFillBrush}"/>
-        <Setter Property="Foreground" Value="{DynamicResource PrimaryBrush}"/>
-        <Setter Property="BorderBrush" Value="{DynamicResource PrimaryBrush}"/>
+        <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource BorderLineBrush}"/>
         <Setter Property="BorderThickness" Value="1"/>
         <Setter Property="HorizontalContentAlignment" Value="Center"/>
         <Setter Property="VerticalContentAlignment" Value="Center"/>
@@ -143,14 +143,14 @@
         <Setter Property="CornerRadius" Value="{DynamicResource HudCornerRadius}"/>
     </Style>
     <Style Selector="Button:pointerover /template/ ContentPresenter">
-        <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}"/>
-        <Setter Property="Foreground" Value="{DynamicResource AccentBrush}"/>
-        <Setter Property="Background" Value="{DynamicResource PanelFillBrush}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource SelectionBorderBrush}"/>
+        <Setter Property="Foreground" Value="{DynamicResource PrimaryBrush}"/>
+        <Setter Property="Background" Value="{DynamicResource HoverBackgroundBrush}"/>
         <Setter Property="BorderThickness" Value="1"/>
     </Style>
     <Style Selector="Button:pressed /template/ ContentPresenter">
-        <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}"/>
-        <Setter Property="Foreground" Value="{DynamicResource AccentBrush}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource SelectionBorderBrush}"/>
+        <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
         <Setter Property="Background" Value="{DynamicResource SelectionBackgroundBrush}"/>
     </Style>
     <Style Selector="Button:disabled">
@@ -160,31 +160,31 @@
     <Style Selector="Button.primary">
         <Setter Property="Background" Value="{DynamicResource AccentBrush}"/>
         <Setter Property="Foreground" Value="{DynamicResource BackgroundBrush}"/>
-        <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource WarmAccentHighlightBrush}"/>
         <Setter Property="FontWeight" Value="Bold"/>
     </Style>
     <Style Selector="Button.primary:pointerover /template/ ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource WarmAccentHighlightBrush}"/>
+        <Setter Property="Foreground" Value="{DynamicResource BackgroundBrush}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource WarmAccentHighlightBrush}"/>
+    </Style>
+    <Style Selector="Button.primary:pressed /template/ ContentPresenter">
         <Setter Property="Background" Value="{DynamicResource AccentBrush}"/>
         <Setter Property="Foreground" Value="{DynamicResource BackgroundBrush}"/>
         <Setter Property="BorderBrush" Value="{DynamicResource PrimaryBrush}"/>
     </Style>
-    <Style Selector="Button.primary:pressed /template/ ContentPresenter">
-        <Setter Property="Background" Value="{DynamicResource PrimaryBrush}"/>
-        <Setter Property="Foreground" Value="{DynamicResource BackgroundBrush}"/>
-        <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}"/>
-    </Style>
 
     <Style Selector="Button.pending">
         <Setter Property="Background" Value="{DynamicResource SelectionBackgroundBrush}"/>
-        <Setter Property="Foreground" Value="{DynamicResource AccentBrush}"/>
-        <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}"/>
+        <Setter Property="Foreground" Value="{DynamicResource PrimaryBrush}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource SelectionBorderBrush}"/>
         <Setter Property="BorderThickness" Value="2"/>
         <Setter Property="FontWeight" Value="Bold"/>
     </Style>
     <Style Selector="Button.pending:pointerover /template/ ContentPresenter">
         <Setter Property="Background" Value="{DynamicResource HoverBackgroundBrush}"/>
-        <Setter Property="Foreground" Value="{DynamicResource AccentBrush}"/>
-        <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}"/>
+        <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource SelectionBorderBrush}"/>
     </Style>
 
     <Style Selector="Button.chrome">
@@ -198,7 +198,7 @@
     </Style>
     <Style Selector="Button.chrome:pointerover /template/ ContentPresenter">
         <Setter Property="Background" Value="{DynamicResource SelectionBackgroundBrush}"/>
-        <Setter Property="Foreground" Value="{DynamicResource AccentBrush}"/>
+        <Setter Property="Foreground" Value="{DynamicResource PrimaryBrush}"/>
         <Setter Property="BorderThickness" Value="0"/>
     </Style>
     <Style Selector="Button.chrome.close:pointerover /template/ ContentPresenter">
@@ -223,25 +223,25 @@
         <Setter Property="HorizontalContentAlignment" Value="Left"/>
         <Setter Property="FontFamily" Value="{StaticResource HudMonoFont}"/>
         <Setter Property="FontSize" Value="13"/>
-        <Setter Property="Foreground" Value="{DynamicResource AccentBrush}"/>
+        <Setter Property="Foreground" Value="{DynamicResource PrimaryBrush}"/>
     </Style>
     <Style Selector="Button.link:pointerover /template/ ContentPresenter">
         <Setter Property="Background" Value="Transparent"/>
-        <Setter Property="Foreground" Value="{DynamicResource PrimaryBrush}"/>
+        <Setter Property="Foreground" Value="{DynamicResource SelectionBorderBrush}"/>
         <Setter Property="BorderThickness" Value="0"/>
     </Style>
 
     <Style Selector="CheckBox">
-        <Setter Property="Foreground" Value="{DynamicResource PrimaryBrush}"/>
+        <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
         <Setter Property="FontFamily" Value="{StaticResource HudBodyFont}"/>
     </Style>
     <Style Selector="CheckBox:pointerover">
-        <Setter Property="Foreground" Value="{DynamicResource AccentBrush}"/>
+        <Setter Property="Foreground" Value="{DynamicResource PrimaryBrush}"/>
     </Style>
 
     <Style Selector="ListBox">
         <Setter Property="Background" Value="Transparent"/>
-        <Setter Property="Foreground" Value="{DynamicResource PrimaryBrush}"/>
+        <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
         <Setter Property="BorderThickness" Value="0"/>
         <Setter Property="Padding" Value="0"/>
     </Style>
@@ -259,11 +259,11 @@
     </Style>
     <Style Selector="ListBoxItem:pointerover /template/ ContentPresenter">
         <Setter Property="Background" Value="{DynamicResource SelectionBackgroundDarkBrush}"/>
-        <Setter Property="Foreground" Value="{DynamicResource AccentBrush}"/>
+        <Setter Property="Foreground" Value="{DynamicResource PrimaryBrush}"/>
     </Style>
     <Style Selector="ListBoxItem:selected:pointerover /template/ ContentPresenter">
         <Setter Property="Background" Value="{DynamicResource HoverBackgroundBrush}"/>
-        <Setter Property="Foreground" Value="{DynamicResource AccentBrush}"/>
+        <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
     </Style>
 
     <Style Selector="ScrollViewer">
@@ -286,9 +286,9 @@
     </Style>
 
     <Style Selector="ProgressBar">
-        <Setter Property="Foreground" Value="{DynamicResource AccentBrush}"/>
+        <Setter Property="Foreground" Value="{DynamicResource PrimaryBrush}"/>
         <Setter Property="Background" Value="{DynamicResource ProgressBackgroundBrush}"/>
-        <Setter Property="BorderBrush" Value="{DynamicResource PrimaryBrush}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource BorderLineBrush}"/>
         <Setter Property="BorderThickness" Value="1"/>
         <Setter Property="Height" Value="6"/>
         <Setter Property="MinHeight" Value="6"/>
@@ -296,8 +296,8 @@
 
     <Style Selector="ToolTip">
         <Setter Property="Background" Value="{DynamicResource PanelFillBrush}"/>
-        <Setter Property="Foreground" Value="{DynamicResource PrimaryBrush}"/>
-        <Setter Property="BorderBrush" Value="{DynamicResource PrimaryBrush}"/>
+        <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource BorderLineBrush}"/>
         <Setter Property="BorderThickness" Value="1"/>
         <Setter Property="Padding" Value="8,6"/>
         <Setter Property="FontFamily" Value="{StaticResource HudBodyFont}"/>
@@ -305,7 +305,7 @@
 
     <Style Selector="Border.badge">
         <Setter Property="Background" Value="{DynamicResource SelectionBackgroundBrush}"/>
-        <Setter Property="BorderBrush" Value="{DynamicResource PrimaryBrush}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource BorderLineBrush}"/>
         <Setter Property="BorderThickness" Value="1"/>
         <Setter Property="Padding" Value="6,1"/>
         <Setter Property="Margin" Value="4,0,2,0"/>
@@ -315,16 +315,19 @@
         <Setter Property="FontFamily" Value="{StaticResource HudDisplayFont}"/>
         <Setter Property="FontSize" Value="9"/>
         <Setter Property="LetterSpacing" Value="1"/>
-        <Setter Property="Foreground" Value="{DynamicResource AccentBrush}"/>
+        <Setter Property="Foreground" Value="{DynamicResource PrimaryBrush}"/>
     </Style>
     <Style Selector="Border.badge-on">
-        <Setter Property="BorderBrush" Value="{DynamicResource SuccessBrush}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource ActiveBrush}"/>
     </Style>
     <Style Selector="Border.badge-on TextBlock">
-        <Setter Property="Foreground" Value="{DynamicResource SuccessBrush}"/>
+        <Setter Property="Foreground" Value="{DynamicResource ActiveBrush}"/>
     </Style>
     <Style Selector="Border.badge-pending">
-        <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource SelectionBorderBrush}"/>
+    </Style>
+    <Style Selector="Border.badge-pending TextBlock">
+        <Setter Property="Foreground" Value="{DynamicResource PrimaryBrush}"/>
     </Style>
     <Style Selector="Border.badge-warn">
         <Setter Property="BorderBrush" Value="{DynamicResource WarningBrush}"/>
@@ -342,7 +345,7 @@
 
     <Style Selector="Border.version-badge">
         <Setter Property="Background" Value="{DynamicResource PanelInsetBrush}"/>
-        <Setter Property="BorderBrush" Value="{DynamicResource PrimaryBrush}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource BorderLineBrush}"/>
         <Setter Property="BorderThickness" Value="1"/>
         <Setter Property="Padding" Value="10,3"/>
         <Setter Property="VerticalAlignment" Value="Center"/>
