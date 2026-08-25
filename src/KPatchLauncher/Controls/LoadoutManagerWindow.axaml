@@ -1,0 +1,131 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:controls="using:KPatchLauncher.Controls"
+        xmlns:vm="using:KPatchLauncher.ViewModels"
+        x:Class="KPatchLauncher.Controls.LoadoutManagerWindow"
+        x:DataType="vm:MainViewModel"
+        Title="Loadouts"
+        Width="520"
+        SizeToContent="Height"
+        CanResize="False"
+        WindowStartupLocation="CenterOwner"
+        SystemDecorations="None"
+        Background="{DynamicResource BackgroundBrush}"
+        Foreground="{DynamicResource PrimaryBrush}"
+        ShowInTaskbar="False">
+    <controls:HudPanel Header="LOADOUTS" Margin="0">
+        <DockPanel>
+            <StackPanel DockPanel.Dock="Bottom"
+                        Orientation="Horizontal"
+                        HorizontalAlignment="Right"
+                        Margin="0,16,0,0">
+                <Button Content="CLOSE"
+                        Classes="primary"
+                        MinWidth="110"
+                        Click="OnClose"/>
+            </StackPanel>
+
+            <StackPanel Spacing="0">
+                <StackPanel Classes="hud-section">
+                    <TextBlock Text="ACTIVE" Classes="section-title"/>
+                    <Border Classes="section-rule"/>
+                    <Border Classes="section-inset">
+                        <StackPanel Spacing="10">
+                            <StackPanel>
+                                <TextBlock Text="SELECTED" Classes="caption"/>
+                                <ComboBox ItemsSource="{Binding AvailableLoadouts}"
+                                          SelectedItem="{Binding ActiveLoadout}"
+                                          MinHeight="32"
+                                          HorizontalAlignment="Stretch"
+                                          PlaceholderText="No loadout selected"
+                                          ToolTip.Tip="Select a named loadout to update the checklist. APPLY stages the game.">
+                                    <ComboBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding Name}"/>
+                                        </DataTemplate>
+                                    </ComboBox.ItemTemplate>
+                                </ComboBox>
+                            </StackPanel>
+                            <StackPanel>
+                                <TextBlock Text="STATUS" Classes="caption"/>
+                                <TextBlock Text="{Binding ActiveLoadoutDisplayName}"
+                                           FontSize="13"
+                                           Opacity="0.9"/>
+                                <TextBlock Text="{Binding LoadoutDirtyHint}"
+                                           TextWrapping="Wrap"
+                                           FontSize="12"
+                                           Foreground="{DynamicResource WarningBrush}"
+                                           IsVisible="{Binding IsLoadoutDirty}"
+                                           Margin="0,4,0,0"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+
+                <StackPanel Classes="hud-section">
+                    <TextBlock Text="MANAGE" Classes="section-title"/>
+                    <Border Classes="section-rule"/>
+                    <Border Classes="section-inset">
+                        <StackPanel Spacing="10">
+                            <StackPanel>
+                                <TextBlock Text="NAME" Classes="caption"/>
+                                <TextBox Text="{Binding NewLoadoutName}"
+                                         Watermark="Loadout name"
+                                         MinHeight="32"
+                                         ToolTip.Tip="Name for SAVE. Change name while a loadout is selected to rename it."/>
+                            </StackPanel>
+                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                <Button Content="SAVE"
+                                        Command="{Binding SaveLoadoutCommand}"
+                                        MinWidth="72"
+                                        MinHeight="32"
+                                        Padding="10,4"
+                                        ToolTip.Tip="Save checklist into the selected loadout, or create/overwrite by name. APPLY still stages the game."/>
+                                <Button Content="DUP"
+                                        Command="{Binding DuplicateLoadoutCommand}"
+                                        MinWidth="64"
+                                        MinHeight="32"
+                                        Padding="8,4"
+                                        ToolTip.Tip="Duplicate the selected loadout"/>
+                                <Button Content="DEL"
+                                        Command="{Binding DeleteLoadoutCommand}"
+                                        Classes="pending"
+                                        MinWidth="64"
+                                        MinHeight="32"
+                                        Padding="8,4"
+                                        ToolTip.Tip="Delete the selected loadout"/>
+                                <Button Content="CLR"
+                                        Command="{Binding ClearLoadoutCommand}"
+                                        MinWidth="64"
+                                        MinHeight="32"
+                                        Padding="8,4"
+                                        ToolTip.Tip="Clear loadout selection without changing checklist"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+
+                <StackPanel Classes="hud-section">
+                    <TextBlock Text="SHARE" Classes="section-title"/>
+                    <Border Classes="section-rule"/>
+                    <Border Classes="section-inset">
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <Button Content="EXPORT"
+                                    Command="{Binding ExportLoadoutCommand}"
+                                    MinWidth="88"
+                                    MinHeight="32"
+                                    Padding="10,4"
+                                    ToolTip.Tip="Export current checklist to a .kploadout file"/>
+                            <Button Content="IMPORT"
+                                    Command="{Binding ImportLoadoutCommand}"
+                                    MinWidth="88"
+                                    MinHeight="32"
+                                    Padding="10,4"
+                                    ToolTip.Tip="Import a loadout file into the list and update the checklist. APPLY still stages the game."/>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </StackPanel>
+        </DockPanel>
+    </controls:HudPanel>
+</Window>

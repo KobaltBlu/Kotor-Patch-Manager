@@ -76,9 +76,13 @@ public partial class MainViewModel
             {
                 OnPropertyChanged(nameof(ActiveLoadoutDisplayName));
                 OnPropertyChanged(nameof(LoadoutDirtyHint));
+                OnPropertyChanged(nameof(LoadoutManagerButtonLabel));
             }
         }
     }
+
+    public string LoadoutManagerButtonLabel =>
+        IsLoadoutDirty ? "LOADOUTS *" : "LOADOUTS";
 
     public string LoadoutDirtyHint =>
         IsLoadoutDirty ? "Loadout edited — SAVE to keep, or switch to discard" : string.Empty;
@@ -155,6 +159,7 @@ public partial class MainViewModel
         _loadoutData = LoadoutStore.Load();
         RefreshLoadoutList();
 
+        OpenLoadoutManagerCommand = new SimpleCommand(async () => await OpenLoadoutManagerAsync());
         SaveLoadoutCommand = new SimpleCommand(SaveCurrentAsLoadout, () => CanEditPaths);
         DeleteLoadoutCommand = new SimpleCommand(async () => await DeleteActiveLoadoutAsync(),
             () => CanEditPaths && HasActiveLoadout);
@@ -188,6 +193,7 @@ public partial class MainViewModel
         }
     }
 
+    public System.Windows.Input.ICommand OpenLoadoutManagerCommand { get; private set; } = null!;
     public System.Windows.Input.ICommand SaveLoadoutCommand { get; private set; } = null!;
     public System.Windows.Input.ICommand DeleteLoadoutCommand { get; private set; } = null!;
     public System.Windows.Input.ICommand DuplicateLoadoutCommand { get; private set; } = null!;
@@ -197,6 +203,14 @@ public partial class MainViewModel
     public System.Windows.Input.ICommand SelectKotor1Command { get; private set; } = null!;
     public System.Windows.Input.ICommand SelectKotor2Command { get; private set; } = null!;
     public System.Windows.Input.ICommand RepairStagingCommand { get; private set; } = null!;
+
+    private async Task OpenLoadoutManagerAsync()
+    {
+        if (Dialogs == null)
+            return;
+
+        await Dialogs.ShowLoadoutManagerAsync(this);
+    }
 
     private void OnActiveLoadoutMetaChanged()
     {

@@ -32,4 +32,10 @@ public sealed class WindowDialogService : IDialogService
         var dialog = new AboutWindow();
         await dialog.ShowDialog(_owner);
     }
+
+    public async Task ShowLoadoutManagerAsync(MainViewModel viewModel)
+    {
+        var dialog = new LoadoutManagerWindow(viewModel);
+        await dialog.ShowDialog(_owner);
+    }
 }

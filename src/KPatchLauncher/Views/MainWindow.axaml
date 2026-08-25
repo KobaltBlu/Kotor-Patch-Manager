@@ -123,66 +123,18 @@
                                Margin="16,8,16,0">
                 <controls:HudPanel.HeaderContent>
                     <StackPanel Orientation="Horizontal" Spacing="6">
-                        <ComboBox ItemsSource="{Binding AvailableLoadouts}"
-                                  SelectedItem="{Binding ActiveLoadout}"
-                                  Width="148"
-                                  MinHeight="28"
-                                  PlaceholderText="Loadout"
-                                  ToolTip.Tip="Select a named loadout to update the checklist. APPLY stages the game.">
-                            <ComboBox.ItemTemplate>
-                                <DataTemplate>
-                                    <TextBlock Text="{Binding Name}"/>
-                                </DataTemplate>
-                            </ComboBox.ItemTemplate>
-                        </ComboBox>
+                        <Button Content="{Binding LoadoutManagerButtonLabel}"
+                                Command="{Binding OpenLoadoutManagerCommand}"
+                                MinWidth="96"
+                                MinHeight="28"
+                                Padding="8,4"
+                                ToolTip.Tip="Open loadout manager"/>
                         <TextBlock Text="{Binding ActiveLoadoutDisplayName}"
                                    VerticalAlignment="Center"
                                    FontSize="11"
                                    Opacity="0.85"
                                    MinWidth="24"
                                    ToolTip.Tip="{Binding LoadoutDirtyHint}"/>
-                        <TextBox Text="{Binding NewLoadoutName}"
-                                 Width="100"
-                                 Watermark="Name"
-                                 MinHeight="28"
-                                 ToolTip.Tip="Name for SAVE. Change name while a loadout is selected to rename it."/>
-                        <Button Content="SAVE"
-                                Command="{Binding SaveLoadoutCommand}"
-                                MinWidth="56"
-                                MinHeight="28"
-                                Padding="8,4"
-                                ToolTip.Tip="Save checklist into the selected loadout, or create/overwrite by name. APPLY still stages the game."/>
-                        <Button Content="DUP"
-                                Command="{Binding DuplicateLoadoutCommand}"
-                                MinWidth="48"
-                                MinHeight="28"
-                                Padding="6,4"
-                                ToolTip.Tip="Duplicate the selected loadout"/>
-                        <Button Content="DEL"
-                                Command="{Binding DeleteLoadoutCommand}"
-                                Classes="pending"
-                                MinWidth="48"
-                                MinHeight="28"
-                                Padding="6,4"
-                                ToolTip.Tip="Delete the selected loadout"/>
-                        <Button Content="CLR"
-                                Command="{Binding ClearLoadoutCommand}"
-                                MinWidth="48"
-                                MinHeight="28"
-                                Padding="6,4"
-                                ToolTip.Tip="Clear loadout selection without changing checklist"/>
-                        <Button Content="EXP"
-                                Command="{Binding ExportLoadoutCommand}"
-                                MinWidth="48"
-                                MinHeight="28"
-                                Padding="6,4"
-                                ToolTip.Tip="Export current checklist and options to a .kploadout file"/>
-                        <Button Content="IMP"
-                                Command="{Binding ImportLoadoutCommand}"
-                                MinWidth="48"
-                                MinHeight="28"
-                                Padding="6,4"
-                                ToolTip.Tip="Import a loadout file into the list and update the checklist. APPLY still stages the game."/>
                         <Button Content="REFRESH"
                                 Command="{Binding RefreshCommand}"
                                 MinWidth="80"
