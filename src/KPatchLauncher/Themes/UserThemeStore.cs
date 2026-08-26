@@ -2,7 +2,6 @@ using System.Text.RegularExpressions;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Markup.Xaml;
-using Avalonia.Platform;
 using Avalonia.Styling;
 
 namespace KPatchLauncher.Themes;
@@ -196,22 +195,46 @@ public static class UserThemeStore
 
     public static async Task ExportBuiltInAsync(string themeVariantKey, string destinationPath)
     {
-        var uri = themeVariantKey switch
+        var fileName = themeVariantKey switch
         {
-            "Kotor2" => new Uri("avares://KPatchLauncher/Themes/Kotor2Theme.axaml"),
-            "Neutral" => new Uri("avares://KPatchLauncher/Themes/NeutralTheme.axaml"),
-            "Dark" => new Uri("avares://KPatchLauncher/Themes/DarkTheme.axaml"),
-            "Light" => new Uri("avares://KPatchLauncher/Themes/LightTheme.axaml"),
-            "HighContrast" => new Uri("avares://KPatchLauncher/Themes/HighContrastTheme.axaml"),
-            "ColorBlindDeuteranopia" => new Uri("avares://KPatchLauncher/Themes/ColorBlindDeuteranopiaTheme.axaml"),
-            "ColorBlindProtanopia" => new Uri("avares://KPatchLauncher/Themes/ColorBlindProtanopiaTheme.axaml"),
-            "ColorBlindTritanopia" => new Uri("avares://KPatchLauncher/Themes/ColorBlindTritanopiaTheme.axaml"),
-            _ => new Uri("avares://KPatchLauncher/Themes/Kotor1Theme.axaml"),
+            "Kotor2" => "Kotor2Theme.axaml",
+            "Neutral" => "NeutralTheme.axaml",
+            "Dark" => "DarkTheme.axaml",
+            "Light" => "LightTheme.axaml",
+            "HighContrast" => "HighContrastTheme.axaml",
+            "ColorBlindDeuteranopia" => "ColorBlindDeuteranopiaTheme.axaml",
+            "ColorBlindProtanopia" => "ColorBlindProtanopiaTheme.axaml",
+            "ColorBlindTritanopia" => "ColorBlindTritanopiaTheme.axaml",
+            _ => "Kotor1Theme.axaml",
         };
 
-        await using var stream = AssetLoader.Open(uri);
+        await using var stream = OpenEmbeddedThemeStream(fileName);
         await using var file = File.Create(destinationPath);
         await stream.CopyToAsync(file);
+    }
+
+    private static Stream OpenEmbeddedThemeStream(string fileName)
+    {
+        var assembly = typeof(UserThemeStore).Assembly;
+        var resourceName = $"{assembly.GetName().Name}.Themes.{fileName}";
+        var stream = assembly.GetManifestResourceStream(resourceName);
+        if (stream != null)
+            return stream;
+
+        // Fallback: scan (handles alternate root namespace / LogicalName quirks).
+        var match = assembly.GetManifestResourceNames()
+            .FirstOrDefault(n => n.EndsWith($".Themes.{fileName}", StringComparison.OrdinalIgnoreCase)
+                                 || n.EndsWith($"Themes.{fileName}", StringComparison.OrdinalIgnoreCase)
+                                 || n.EndsWith(fileName, StringComparison.OrdinalIgnoreCase));
+        if (match != null)
+        {
+            stream = assembly.GetManifestResourceStream(match);
+            if (stream != null)
+                return stream;
+        }
+
+        throw new FileNotFoundException(
+            $"Embedded theme '{fileName}' was not found. Available: {string.Join(", ", assembly.GetManifestResourceNames())}");
     }
 
     public static string? FindUserThemePath(string slug)

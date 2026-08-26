@@ -69,6 +69,8 @@
     <AvaloniaResource Include="Assets\**" />
     <!-- Themes/*.axaml are AvaloniaXaml by default; do not also list them as AvaloniaResource
          or AssemblyDescriptor throws duplicate key /Themes/... -->
+    <!-- Raw theme sources for EXPORT (AvaloniaXaml is compiled and not AssetLoader-readable). -->
+    <EmbeddedResource Include="Themes\*Theme.axaml" />
   </ItemGroup>
 
 </Project>
