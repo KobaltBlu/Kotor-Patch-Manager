@@ -1,0 +1,84 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- Dark: generic dark HUD (Fluent Dark) -->
+    <Color x:Key="BackgroundColor">#121417</Color>
+    <Color x:Key="PanelFillColor">#1B1F24</Color>
+    <Color x:Key="PanelInsetColor">#0E1013</Color>
+    <Color x:Key="BorderColor">#5A6570</Color>
+    <Color x:Key="GridLineColor">#2E363E</Color>
+    <Color x:Key="PrimaryColor">#7EB6FF</Color>
+    <Color x:Key="TextColor">#F2F4F7</Color>
+    <Color x:Key="CaptionColor">#B8C0C8</Color>
+    <Color x:Key="MutedTextColor">#7A8490</Color>
+    <Color x:Key="SelectionBackgroundColor">#243040</Color>
+    <Color x:Key="SelectionBorderColor">#7EB6FF</Color>
+    <Color x:Key="SelectionBackgroundDarkColor">#1A222C</Color>
+    <Color x:Key="HoverBackgroundColor">#2C3848</Color>
+    <Color x:Key="ProgressBackgroundColor">#0E1013</Color>
+    <Color x:Key="ActiveColor">#5FD4A4</Color>
+    <Color x:Key="SuccessColor">#5FD4A4</Color>
+    <Color x:Key="AccentColor">#C9A227</Color>
+    <Color x:Key="WarmAccentHighlightColor">#E0BC4A</Color>
+    <Color x:Key="GlowColor">#407EB6FF</Color>
+    <Color x:Key="WarningColor">#E0A84A</Color>
+    <Color x:Key="ErrorColor">#FF6B73</Color>
+    <Color x:Key="ErrorBackgroundColor">#3A1518</Color>
+    <Color x:Key="DisabledColor">#555E68</Color>
+
+    <SolidColorBrush x:Key="BackgroundBrush" Color="{StaticResource BackgroundColor}"/>
+    <SolidColorBrush x:Key="PanelFillBrush" Color="{StaticResource PanelFillColor}"/>
+    <SolidColorBrush x:Key="PanelInsetBrush" Color="{StaticResource PanelInsetColor}"/>
+    <SolidColorBrush x:Key="BorderLineBrush" Color="{StaticResource BorderColor}"/>
+    <SolidColorBrush x:Key="GridLineBrush" Color="{StaticResource GridLineColor}"/>
+    <SolidColorBrush x:Key="PrimaryBrush" Color="{StaticResource PrimaryColor}"/>
+    <SolidColorBrush x:Key="TextBrush" Color="{StaticResource TextColor}"/>
+    <SolidColorBrush x:Key="CaptionBrush" Color="{StaticResource CaptionColor}"/>
+    <SolidColorBrush x:Key="MutedTextBrush" Color="{StaticResource MutedTextColor}"/>
+    <SolidColorBrush x:Key="SelectionBackgroundBrush" Color="{StaticResource SelectionBackgroundColor}"/>
+    <SolidColorBrush x:Key="SelectionBorderBrush" Color="{StaticResource SelectionBorderColor}"/>
+    <SolidColorBrush x:Key="SelectionBackgroundDarkBrush" Color="{StaticResource SelectionBackgroundDarkColor}"/>
+    <SolidColorBrush x:Key="HoverBackgroundBrush" Color="{StaticResource HoverBackgroundColor}"/>
+    <SolidColorBrush x:Key="ProgressBackgroundBrush" Color="{StaticResource ProgressBackgroundColor}"/>
+    <SolidColorBrush x:Key="ActiveBrush" Color="{StaticResource ActiveColor}"/>
+    <SolidColorBrush x:Key="SuccessBrush" Color="{StaticResource SuccessColor}"/>
+    <SolidColorBrush x:Key="AccentBrush" Color="{StaticResource AccentColor}"/>
+    <SolidColorBrush x:Key="WarmAccentHighlightBrush" Color="{StaticResource WarmAccentHighlightColor}"/>
+    <SolidColorBrush x:Key="GlowBrush" Color="{StaticResource GlowColor}"/>
+    <SolidColorBrush x:Key="WarningBrush" Color="{StaticResource WarningColor}"/>
+    <SolidColorBrush x:Key="ErrorBrush" Color="{StaticResource ErrorColor}"/>
+    <SolidColorBrush x:Key="ErrorBackgroundBrush" Color="{StaticResource ErrorBackgroundColor}"/>
+    <SolidColorBrush x:Key="DisabledBrush" Color="{StaticResource DisabledColor}"/>
+
+    <CornerRadius x:Key="HudCornerRadius">0</CornerRadius>
+    <x:Double x:Key="HudBracketLength">18</x:Double>
+
+    <!-- Fluent ScrollBar resources remapped to HUD palette -->
+    <SolidColorBrush x:Key="ScrollBarBackground" Color="{StaticResource PanelInsetColor}"/>
+    <SolidColorBrush x:Key="ScrollBarBackgroundPointerOver" Color="{StaticResource PanelInsetColor}"/>
+    <SolidColorBrush x:Key="ScrollBarBorderBrush" Color="{StaticResource BorderColor}"/>
+    <SolidColorBrush x:Key="ScrollBarForeground" Color="{StaticResource PrimaryColor}"/>
+    <SolidColorBrush x:Key="ScrollBarTrackFill" Color="{StaticResource PanelInsetColor}"/>
+    <SolidColorBrush x:Key="ScrollBarTrackFillPointerOver" Color="{StaticResource PanelInsetColor}"/>
+    <SolidColorBrush x:Key="ScrollBarTrackStroke" Color="{StaticResource GridLineColor}"/>
+    <SolidColorBrush x:Key="ScrollBarTrackStrokePointerOver" Color="{StaticResource BorderColor}"/>
+    <Color x:Key="ScrollBarThumbBackgroundColor">#7EB6FF</Color>
+    <SolidColorBrush x:Key="ScrollBarThumbFill" Color="{StaticResource PrimaryColor}"/>
+    <SolidColorBrush x:Key="ScrollBarThumbFillPointerOver" Color="{StaticResource SelectionBorderColor}"/>
+    <SolidColorBrush x:Key="ScrollBarThumbFillPressed" Color="{StaticResource SelectionBorderColor}"/>
+    <SolidColorBrush x:Key="ScrollBarThumbFillDisabled" Color="{StaticResource DisabledColor}"/>
+    <SolidColorBrush x:Key="ScrollBarPanningThumbBackground" Color="{StaticResource PrimaryColor}"/>
+    <Color x:Key="ScrollBarPanningThumbBackgroundColor">#7EB6FF</Color>
+    <SolidColorBrush x:Key="ScrollBarButtonBackground" Color="{StaticResource PanelFillColor}"/>
+    <SolidColorBrush x:Key="ScrollBarButtonBackgroundPointerOver" Color="{StaticResource SelectionBackgroundColor}"/>
+    <SolidColorBrush x:Key="ScrollBarButtonBackgroundPressed" Color="{StaticResource HoverBackgroundColor}"/>
+    <SolidColorBrush x:Key="ScrollBarButtonBackgroundDisabled" Color="{StaticResource PanelInsetColor}"/>
+    <SolidColorBrush x:Key="ScrollBarButtonBorderBrush" Color="{StaticResource BorderColor}"/>
+    <SolidColorBrush x:Key="ScrollBarButtonBorderBrushPointerOver" Color="{StaticResource SelectionBorderColor}"/>
+    <SolidColorBrush x:Key="ScrollBarButtonBorderBrushPressed" Color="{StaticResource SelectionBorderColor}"/>
+    <SolidColorBrush x:Key="ScrollBarButtonBorderBrushDisabled" Color="{StaticResource DisabledColor}"/>
+    <SolidColorBrush x:Key="ScrollBarButtonArrowForeground" Color="{StaticResource PrimaryColor}"/>
+    <SolidColorBrush x:Key="ScrollBarButtonArrowForegroundPointerOver" Color="{StaticResource TextColor}"/>
+    <SolidColorBrush x:Key="ScrollBarButtonArrowForegroundPressed" Color="{StaticResource TextColor}"/>
+    <SolidColorBrush x:Key="ScrollBarButtonArrowForegroundDisabled" Color="{StaticResource DisabledColor}"/>
+</ResourceDictionary>

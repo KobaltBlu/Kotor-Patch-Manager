@@ -71,6 +71,22 @@ public class AppSettings
     public string LibrarySortMode { get; set; } = "name";
 
     /// <summary>
+    /// Theme preference while targeting KotOR 1 (or unknown).
+    /// auto | kotor1 | kotor2 | neutral | dark | light | highcontrast | colorblind-* | user:{slug}
+    /// </summary>
+    public string Kotor1UiThemeId { get; set; } = "auto";
+
+    /// <summary>
+    /// Theme preference while targeting KotOR 2.
+    /// </summary>
+    public string Kotor2UiThemeId { get; set; } = "auto";
+
+    /// <summary>
+    /// Legacy single theme preference. Migrated into per-game ids on load.
+    /// </summary>
+    public string? UiThemeId { get; set; }
+
+    /// <summary>
     /// Legacy property for backwards compatibility (TODO: Remove after migration)
     /// </summary>
     [Obsolete("Use CheckedPatchIds instead")]
@@ -109,13 +125,39 @@ public class AppSettings
             }
 
             var json = File.ReadAllText(SettingsFilePath);
-            return JsonSerializer.Deserialize<AppSettings>(json) ?? new AppSettings();
+            var settings = JsonSerializer.Deserialize<AppSettings>(json) ?? new AppSettings();
+            settings.MigrateLegacyUiTheme();
+            return settings;
         }
         catch
         {
             // If anything goes wrong, return defaults
             return new AppSettings();
         }
+    }
+
+    /// <summary>
+    /// Copies a legacy global <see cref="UiThemeId"/> into both per-game slots once.
+    /// </summary>
+    private void MigrateLegacyUiTheme()
+    {
+        if (string.IsNullOrWhiteSpace(UiThemeId))
+            return;
+
+        var legacy = UiThemeId.Trim();
+        UiThemeId = null;
+
+        var k1Default = string.IsNullOrWhiteSpace(Kotor1UiThemeId)
+                        || string.Equals(Kotor1UiThemeId, "auto", StringComparison.OrdinalIgnoreCase);
+        var k2Default = string.IsNullOrWhiteSpace(Kotor2UiThemeId)
+                        || string.Equals(Kotor2UiThemeId, "auto", StringComparison.OrdinalIgnoreCase);
+
+        if (k1Default)
+            Kotor1UiThemeId = legacy;
+        if (k2Default)
+            Kotor2UiThemeId = legacy;
+
+        Save();
     }
 
     /// <summary>

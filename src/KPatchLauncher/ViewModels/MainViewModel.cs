@@ -18,6 +18,7 @@ using KPatchCore.Detectors;
 using KPatchCore.Launcher;
 using KPatchCore.Validators;
 using KPatchLauncher.Models;
+using KPatchLauncher.Themes;
 
 namespace KPatchLauncher.ViewModels;
 
@@ -48,6 +49,9 @@ public partial class MainViewModel : ViewModelBase
     private readonly List<string> _preferredInstallOrder = new();
     private bool _isWorkspaceNarrow;
     private LibrarySortOption? _selectedLibrarySortOption;
+    private UiThemeOption? _selectedKotor1UiThemeOption;
+    private UiThemeOption? _selectedKotor2UiThemeOption;
+    private bool _isUpdatingUiThemeSelection;
 
     public MainViewModel()
     {
@@ -81,9 +85,13 @@ public partial class MainViewModel : ViewModelBase
         SelectPatchCommand = new SimpleCommand(p => SelectPatchById(p as string));
         OpenUrlCommand = new SimpleCommand(p => OpenUrl(p as string));
         OpenAboutCommand = new SimpleCommand(async () => await OpenAboutAsync());
+        ImportUiThemeCommand = new SimpleCommand(async () => await ImportUiThemeAsync());
+        ExportUiThemeCommand = new SimpleCommand(async () => await ExportUiThemeAsync());
+        OpenUiThemesFolderCommand = new SimpleCommand(OpenUiThemesFolder);
 
         InitSystemsConsole();
         InitLibrarySortOptions();
+        RebuildUiThemeOptions();
 
         // Load patches if path is set
         if (!string.IsNullOrWhiteSpace(_patchesPath))
@@ -158,6 +166,49 @@ public partial class MainViewModel : ViewModelBase
         {
             if (SetProperty(ref _selectedLibrarySortOption, value) && value != null)
                 LibrarySortMode = value.Id;
+        }
+    }
+
+    public ObservableCollection<UiThemeOption> UiThemeOptions { get; } = new();
+
+    /// <summary>
+    /// Theme preference for the active game target (K1 / unknown → Kotor1 slot; K2 → Kotor2 slot).
+    /// </summary>
+    public string UiThemeId => GetUiThemeIdForGame(_detectedGameVersion?.Title ?? GuessTitleFromPath(GamePath));
+
+    public UiThemeOption? SelectedKotor1UiThemeOption
+    {
+        get => _selectedKotor1UiThemeOption;
+        set
+        {
+            if (_isUpdatingUiThemeSelection)
+            {
+                SetProperty(ref _selectedKotor1UiThemeOption, value);
+                return;
+            }
+
+            if (!SetProperty(ref _selectedKotor1UiThemeOption, value) || value == null)
+                return;
+
+            ApplyAndPersistUiTheme(value.Id, GameTitle.KOTOR1);
+        }
+    }
+
+    public UiThemeOption? SelectedKotor2UiThemeOption
+    {
+        get => _selectedKotor2UiThemeOption;
+        set
+        {
+            if (_isUpdatingUiThemeSelection)
+            {
+                SetProperty(ref _selectedKotor2UiThemeOption, value);
+                return;
+            }
+
+            if (!SetProperty(ref _selectedKotor2UiThemeOption, value) || value == null)
+                return;
+
+            ApplyAndPersistUiTheme(value.Id, GameTitle.KOTOR2);
         }
     }
 
@@ -423,6 +474,9 @@ public partial class MainViewModel : ViewModelBase
     public ICommand SelectPatchCommand { get; }
     public ICommand OpenUrlCommand { get; }
     public ICommand OpenAboutCommand { get; }
+    public ICommand ImportUiThemeCommand { get; }
+    public ICommand ExportUiThemeCommand { get; }
+    public ICommand OpenUiThemesFolderCommand { get; }
 
     /// <summary>
     /// Updates narrow/wide workspace flag from the main window width (no side effects).
@@ -444,6 +498,263 @@ public partial class MainViewModel : ViewModelBase
                                        string.Equals(o.Id, mode, StringComparison.OrdinalIgnoreCase))
                                    ?? LibrarySortOptions[0];
         _librarySortMode = _selectedLibrarySortOption.Id;
+    }
+
+    private void RebuildUiThemeOptions(string? preferredIdForCurrentGame = null)
+    {
+        var k1Id = NormalizeStoredThemeId(_settings.Kotor1UiThemeId);
+        var k2Id = NormalizeStoredThemeId(_settings.Kotor2UiThemeId);
+
+        if (preferredIdForCurrentGame != null)
+        {
+            if (ResolveThemeGameSlot() == GameTitle.KOTOR2)
+                k2Id = preferredIdForCurrentGame;
+            else
+                k1Id = preferredIdForCurrentGame;
+        }
+
+        k1Id = EnsureThemeAvailableOrAuto(k1Id, GameTitle.KOTOR1);
+        k2Id = EnsureThemeAvailableOrAuto(k2Id, GameTitle.KOTOR2);
+
+        UiThemeOptions.Clear();
+        UiThemeOptions.Add(new UiThemeOption(AppThemeVariants.AutoId, "Auto (match game)"));
+        UiThemeOptions.Add(new UiThemeOption(AppThemeVariants.Kotor1Id, "KotOR 1"));
+        UiThemeOptions.Add(new UiThemeOption(AppThemeVariants.Kotor2Id, "KotOR 2"));
+        UiThemeOptions.Add(new UiThemeOption(AppThemeVariants.NeutralId, "Neutral"));
+        UiThemeOptions.Add(new UiThemeOption(AppThemeVariants.DarkId, "Dark"));
+        UiThemeOptions.Add(new UiThemeOption(AppThemeVariants.LightId, "Light"));
+        UiThemeOptions.Add(new UiThemeOption(AppThemeVariants.HighContrastId, "High contrast"));
+        UiThemeOptions.Add(new UiThemeOption(AppThemeVariants.ColorBlindDeuteranopiaId, "Color blind · Deuteranopia"));
+        UiThemeOptions.Add(new UiThemeOption(AppThemeVariants.ColorBlindProtanopiaId, "Color blind · Protanopia"));
+        UiThemeOptions.Add(new UiThemeOption(AppThemeVariants.ColorBlindTritanopiaId, "Color blind · Tritanopia"));
+
+        foreach (var theme in UserThemeStore.ListThemes())
+        {
+            UiThemeOptions.Add(new UiThemeOption(
+                AppThemeVariants.ToUserThemeId(theme.Slug),
+                $"User · {theme.DisplayName}"));
+        }
+
+        var k1Match = UiThemeOptions.FirstOrDefault(o =>
+                          string.Equals(o.Id, k1Id, StringComparison.OrdinalIgnoreCase))
+                      ?? UiThemeOptions[0];
+        var k2Match = UiThemeOptions.FirstOrDefault(o =>
+                          string.Equals(o.Id, k2Id, StringComparison.OrdinalIgnoreCase))
+                      ?? UiThemeOptions[0];
+
+        _isUpdatingUiThemeSelection = true;
+        try
+        {
+            SelectedKotor1UiThemeOption = k1Match;
+            SelectedKotor2UiThemeOption = k2Match;
+        }
+        finally
+        {
+            _isUpdatingUiThemeSelection = false;
+        }
+    }
+
+    private static string NormalizeStoredThemeId(string? themeId) =>
+        string.IsNullOrWhiteSpace(themeId) ? AppThemeVariants.AutoId : themeId.Trim();
+
+    private string GetUiThemeIdForGame(GameTitle? title) =>
+        title == GameTitle.KOTOR2
+            ? NormalizeStoredThemeId(_settings.Kotor2UiThemeId)
+            : NormalizeStoredThemeId(_settings.Kotor1UiThemeId);
+
+    private GameTitle ResolveThemeGameSlot()
+    {
+        var title = _detectedGameVersion?.Title ?? GuessTitleFromPath(GamePath);
+        return title == GameTitle.KOTOR2 ? GameTitle.KOTOR2 : GameTitle.KOTOR1;
+    }
+
+    private string EnsureThemeAvailableOrAuto(string themeId, GameTitle slot)
+    {
+        if (AppThemeVariants.TryGetUserSlug(themeId) is not { } slug
+            || UserThemeStore.FindUserThemePath(slug) != null)
+        {
+            return themeId;
+        }
+
+        if (slot == GameTitle.KOTOR2)
+            _settings.Kotor2UiThemeId = AppThemeVariants.AutoId;
+        else
+            _settings.Kotor1UiThemeId = AppThemeVariants.AutoId;
+        _settings.Save();
+        return AppThemeVariants.AutoId;
+    }
+
+    private void ApplyAndPersistUiTheme(string themeId, GameTitle slot)
+    {
+        if (AppThemeVariants.TryGetUserSlug(themeId) is { } slug
+            && UserThemeStore.FindUserThemePath(slug) == null)
+        {
+            themeId = AppThemeVariants.AutoId;
+            StatusMessage = "Selected user theme is missing; reverted to Auto.";
+            RebuildUiThemeOptions();
+        }
+
+        if (slot == GameTitle.KOTOR2)
+            _settings.Kotor2UiThemeId = themeId;
+        else
+            _settings.Kotor1UiThemeId = themeId;
+        _settings.Save();
+
+        // Only restyle when the edited slot is the active game target.
+        if (ResolveThemeGameSlot() == slot)
+            ApplyCurrentUiTheme();
+    }
+
+    private void ApplyCurrentUiTheme()
+    {
+        var title = _detectedGameVersion?.Title ?? GuessTitleFromPath(GamePath);
+        var themeId = GetUiThemeIdForGame(title);
+        if (Application.Current is App app)
+            app.ApplyUiTheme(themeId, title);
+    }
+
+    private async Task ImportUiThemeAsync()
+    {
+        try
+        {
+            var window = GetMainWindow();
+            if (window == null)
+            {
+                StatusMessage = "Error: Could not access window";
+                return;
+            }
+
+            if (Application.Current is not App app)
+            {
+                StatusMessage = "Error: Application not ready";
+                return;
+            }
+
+            var result = await window.StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
+            {
+                Title = "Import theme",
+                AllowMultiple = false,
+                SuggestedStartLocation = await TryGetSuggestedStartFolderAsync(window, UserThemeStore.ThemesDirectory),
+                FileTypeFilter = new[]
+                {
+                    new FilePickerFileType("Avalonia Theme")
+                    {
+                        Patterns = new[] { "*.axaml" }
+                    },
+                    new FilePickerFileType("All Files")
+                    {
+                        Patterns = new[] { "*" }
+                    }
+                }
+            });
+
+            if (result.Count == 0)
+                return;
+
+            var path = result[0].Path.LocalPath;
+            if (!UserThemeStore.TryImport(app, path, out var info, out var error) || info == null)
+            {
+                if (Dialogs != null)
+                    await Dialogs.ShowErrorAsync("Import theme", error ?? "Import failed.");
+                else
+                    StatusMessage = $"Failed to import theme: {error}";
+                return;
+            }
+
+            var themeId = AppThemeVariants.ToUserThemeId(info.Slug);
+            var slot = ResolveThemeGameSlot();
+            RebuildUiThemeOptions(themeId);
+            ApplyAndPersistUiTheme(themeId, slot);
+            StatusMessage = $"Imported theme '{info.DisplayName}'";
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"Failed to import theme: {ex.Message}";
+        }
+    }
+
+    private async Task ExportUiThemeAsync()
+    {
+        try
+        {
+            var window = GetMainWindow();
+            if (window == null)
+            {
+                StatusMessage = "Error: Could not access window";
+                return;
+            }
+
+            if (Application.Current is not App app)
+            {
+                StatusMessage = "Error: Application not ready";
+                return;
+            }
+
+            string suggestedName;
+            string? sourceUserPath = null;
+            string? builtInKey = null;
+
+            if (AppThemeVariants.TryGetUserSlug(UiThemeId) is { } slug)
+            {
+                sourceUserPath = UserThemeStore.FindUserThemePath(slug);
+                suggestedName = slug;
+            }
+            else
+            {
+                builtInKey = app.GetEffectiveBuiltInExportKey();
+                suggestedName = builtInKey.ToLowerInvariant();
+            }
+
+            var file = await window.StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions
+            {
+                Title = "Export theme",
+                SuggestedFileName = $"{suggestedName}.axaml",
+                DefaultExtension = "axaml",
+                FileTypeChoices = new[]
+                {
+                    new FilePickerFileType("Avalonia Theme")
+                    {
+                        Patterns = new[] { "*.axaml" }
+                    }
+                }
+            });
+
+            if (file == null)
+                return;
+
+            var dest = file.Path.LocalPath;
+            if (sourceUserPath != null)
+            {
+                File.Copy(sourceUserPath, dest, overwrite: true);
+            }
+            else
+            {
+                await UserThemeStore.ExportBuiltInAsync(builtInKey ?? "Kotor1", dest);
+            }
+
+            StatusMessage = "Exported theme";
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"Failed to export theme: {ex.Message}";
+        }
+    }
+
+    private void OpenUiThemesFolder()
+    {
+        try
+        {
+            UserThemeStore.EnsureThemesDirectory();
+            Process.Start(new ProcessStartInfo
+            {
+                FileName = UserThemeStore.ThemesDirectory,
+                UseShellExecute = true
+            });
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"Failed to open themes folder: {ex.Message}";
+        }
     }
 
     private bool IsInstalled(string patchId) => _installedPatchIds.Contains(patchId);
@@ -1761,11 +2072,7 @@ public partial class MainViewModel : ViewModelBase
             _detectedGameVersion = v;
             KotorVersion = v.DisplayName;
 
-            // Switch theme based on detected game title
-            if (Application.Current is App app)
-            {
-                app.LoadTheme(v.Title);
-            }
+            ApplyCurrentUiTheme();
 
             RememberCurrentTarget();
             RefreshLoadoutList();
@@ -1783,11 +2090,7 @@ public partial class MainViewModel : ViewModelBase
         _detectedGameVersion = null;
         KotorVersion = "Unknown";
 
-        // Load default theme (KOTOR 1) for unknown games
-        if (Application.Current is App app)
-        {
-            app.LoadTheme(KPatchCore.Models.GameTitle.KOTOR1);
-        }
+        ApplyCurrentUiTheme();
 
         OnPropertyChanged(nameof(IsKotor1Target));
         OnPropertyChanged(nameof(IsKotor2Target));

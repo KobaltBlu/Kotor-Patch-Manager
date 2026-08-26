@@ -1,5 +1,7 @@
 <Application xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:themes="using:KPatchLauncher.Themes"
+             xmlns:styling="using:Avalonia.Styling"
              x:Class="KPatchLauncher.App"
              RequestedThemeVariant="Dark">
     <Application.Resources>
@@ -8,9 +10,55 @@
             <FontFamily x:Key="HudBodyFont">avares://KPatchLauncher/Assets/Fonts/Rajdhani-Regular.ttf,avares://KPatchLauncher/Assets/Fonts/Rajdhani-SemiBold.ttf,avares://KPatchLauncher/Assets/Fonts/Rajdhani-Bold.ttf#Rajdhani</FontFamily>
             <FontFamily x:Key="HudMonoFont">avares://KPatchLauncher/Assets/Fonts/ShareTechMono-Regular.ttf#Share Tech Mono</FontFamily>
             <ResourceDictionary.MergedDictionaries>
-                <ResourceInclude Source="avares://KPatchLauncher/Themes/Kotor1Theme.axaml"/>
                 <ResourceInclude Source="avares://KPatchLauncher/Themes/HudScrollBar.axaml"/>
             </ResourceDictionary.MergedDictionaries>
+            <ResourceDictionary.ThemeDictionaries>
+                <ResourceDictionary x:Key="{x:Static themes:AppThemeVariants.Kotor1}">
+                    <ResourceDictionary.MergedDictionaries>
+                        <ResourceInclude Source="avares://KPatchLauncher/Themes/Kotor1Theme.axaml"/>
+                    </ResourceDictionary.MergedDictionaries>
+                </ResourceDictionary>
+                <ResourceDictionary x:Key="{x:Static themes:AppThemeVariants.Kotor2}">
+                    <ResourceDictionary.MergedDictionaries>
+                        <ResourceInclude Source="avares://KPatchLauncher/Themes/Kotor2Theme.axaml"/>
+                    </ResourceDictionary.MergedDictionaries>
+                </ResourceDictionary>
+                <ResourceDictionary x:Key="{x:Static themes:AppThemeVariants.Neutral}">
+                    <ResourceDictionary.MergedDictionaries>
+                        <ResourceInclude Source="avares://KPatchLauncher/Themes/NeutralTheme.axaml"/>
+                    </ResourceDictionary.MergedDictionaries>
+                </ResourceDictionary>
+                <ResourceDictionary x:Key="{x:Static styling:ThemeVariant.Dark}">
+                    <ResourceDictionary.MergedDictionaries>
+                        <ResourceInclude Source="avares://KPatchLauncher/Themes/DarkTheme.axaml"/>
+                    </ResourceDictionary.MergedDictionaries>
+                </ResourceDictionary>
+                <ResourceDictionary x:Key="{x:Static styling:ThemeVariant.Light}">
+                    <ResourceDictionary.MergedDictionaries>
+                        <ResourceInclude Source="avares://KPatchLauncher/Themes/LightTheme.axaml"/>
+                    </ResourceDictionary.MergedDictionaries>
+                </ResourceDictionary>
+                <ResourceDictionary x:Key="{x:Static themes:AppThemeVariants.HighContrast}">
+                    <ResourceDictionary.MergedDictionaries>
+                        <ResourceInclude Source="avares://KPatchLauncher/Themes/HighContrastTheme.axaml"/>
+                    </ResourceDictionary.MergedDictionaries>
+                </ResourceDictionary>
+                <ResourceDictionary x:Key="{x:Static themes:AppThemeVariants.ColorBlindDeuteranopia}">
+                    <ResourceDictionary.MergedDictionaries>
+                        <ResourceInclude Source="avares://KPatchLauncher/Themes/ColorBlindDeuteranopiaTheme.axaml"/>
+                    </ResourceDictionary.MergedDictionaries>
+                </ResourceDictionary>
+                <ResourceDictionary x:Key="{x:Static themes:AppThemeVariants.ColorBlindProtanopia}">
+                    <ResourceDictionary.MergedDictionaries>
+                        <ResourceInclude Source="avares://KPatchLauncher/Themes/ColorBlindProtanopiaTheme.axaml"/>
+                    </ResourceDictionary.MergedDictionaries>
+                </ResourceDictionary>
+                <ResourceDictionary x:Key="{x:Static themes:AppThemeVariants.ColorBlindTritanopia}">
+                    <ResourceDictionary.MergedDictionaries>
+                        <ResourceInclude Source="avares://KPatchLauncher/Themes/ColorBlindTritanopiaTheme.axaml"/>
+                    </ResourceDictionary.MergedDictionaries>
+                </ResourceDictionary>
+            </ResourceDictionary.ThemeDictionaries>
         </ResourceDictionary>
     </Application.Resources>
     <Application.Styles>

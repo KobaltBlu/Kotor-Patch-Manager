@@ -54,6 +54,7 @@
     <PackageReference Include="Avalonia.Themes.Fluent" Version="11.3.20" />
     <PackageReference Include="Avalonia.Fonts.Inter" Version="11.3.20" />
     <PackageReference Include="Avalonia.ReactiveUI" Version="11.3.9" />
+    <PackageReference Include="Avalonia.Markup.Xaml.Loader" Version="11.3.20" />
   </ItemGroup>
 
   <ItemGroup>
