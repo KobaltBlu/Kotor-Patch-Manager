@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using Avalonia.Controls;
 using Avalonia.Input;
@@ -12,13 +13,62 @@ namespace KPatchLauncher.Views;
 
 public partial class MainWindow : Window
 {
+    private bool _detailsModalOpen;
+
     public MainWindow()
     {
         InitializeComponent();
         TrySetWindowIcon();
-        AddHandler(KeyDownEvent, OnKeyDown, Avalonia.Interactivity.RoutingStrategies.Tunnel);
+        AddHandler(KeyDownEvent, OnKeyDown, RoutingStrategies.Tunnel);
         AddHandler(DragDrop.DragOverEvent, OnPatchesDragOver);
         AddHandler(DragDrop.DropEvent, OnPatchesDrop);
+        SizeChanged += OnWindowSizeChanged;
+        DataContextChanged += OnDataContextChanged;
+    }
+
+    private void OnDataContextChanged(object? sender, EventArgs e)
+    {
+        if (DataContext is MainViewModel vm)
+        {
+            vm.PropertyChanged -= OnViewModelPropertyChanged;
+            vm.PropertyChanged += OnViewModelPropertyChanged;
+            vm.NotifyWindowWidth(Bounds.Width);
+        }
+    }
+
+    private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(MainViewModel.SelectedPatch))
+            _ = MaybeOpenPatchDetailsModalAsync();
+    }
+
+    private void OnWindowSizeChanged(object? sender, SizeChangedEventArgs e)
+    {
+        if (DataContext is MainViewModel vm)
+            vm.NotifyWindowWidth(e.NewSize.Width);
+    }
+
+    private async System.Threading.Tasks.Task MaybeOpenPatchDetailsModalAsync()
+    {
+        if (DataContext is not MainViewModel vm)
+            return;
+
+        if (!vm.IsWorkspaceNarrow || vm.SelectedPatch == null || _detailsModalOpen)
+            return;
+
+        if (vm.Dialogs == null)
+            return;
+
+        _detailsModalOpen = true;
+        try
+        {
+            await vm.Dialogs.ShowPatchDetailsAsync(vm);
+            vm.SelectedPatch = null;
+        }
+        finally
+        {
+            _detailsModalOpen = false;
+        }
     }
 
     private void TrySetWindowIcon()
@@ -37,30 +87,16 @@ public partial class MainWindow : Window
     private void OnTitleBarPointerPressed(object? sender, PointerPressedEventArgs e)
     {
         if (e.GetCurrentPoint(this).Properties.IsLeftButtonPressed)
-        {
             BeginMoveDrag(e);
-        }
     }
 
-    private void OnTitleBarDoubleTapped(object? sender, TappedEventArgs e)
-    {
-        ToggleMaximize();
-    }
+    private void OnTitleBarDoubleTapped(object? sender, TappedEventArgs e) => ToggleMaximize();
 
-    private void OnMinimize(object? sender, RoutedEventArgs e)
-    {
-        WindowState = WindowState.Minimized;
-    }
+    private void OnMinimize(object? sender, RoutedEventArgs e) => WindowState = WindowState.Minimized;
 
-    private void OnMaximize(object? sender, RoutedEventArgs e)
-    {
-        ToggleMaximize();
-    }
+    private void OnMaximize(object? sender, RoutedEventArgs e) => ToggleMaximize();
 
-    private void OnClose(object? sender, RoutedEventArgs e)
-    {
-        Close();
-    }
+    private void OnClose(object? sender, RoutedEventArgs e) => Close();
 
     private void ToggleMaximize()
     {
@@ -99,8 +135,6 @@ public partial class MainWindow : Window
         if (!IsOverPatchesPanel(e.Source))
             return;
 
-        // File paths may be unavailable during DragOver on some platforms; accept File format
-        // and filter to .kpatch on Drop.
         e.DragEffects = e.DataTransfer.Contains(DataFormat.File)
             ? DragDropEffects.Copy
             : DragDropEffects.None;
@@ -168,13 +202,9 @@ public partial class MainWindow : Window
         if (e.Key == Key.Escape)
         {
             if (SearchBox.IsFocused && !string.IsNullOrEmpty(vm.SearchText))
-            {
                 vm.SearchText = string.Empty;
-            }
             else
-            {
                 vm.SelectedPatch = null;
-            }
 
             e.Handled = true;
         }

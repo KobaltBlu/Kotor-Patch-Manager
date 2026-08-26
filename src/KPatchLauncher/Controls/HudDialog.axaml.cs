@@ -10,6 +10,12 @@ public partial class HudDialog : Window
     public HudDialog()
     {
         InitializeComponent();
+        HudModalChrome.Attach(this, () =>
+        {
+            Confirmed = false;
+            Close(false);
+            return true;
+        });
     }
 
     public void Configure(string title, string message, string confirmLabel, string? cancelLabel, bool isError)
@@ -31,7 +37,8 @@ public partial class HudDialog : Window
         if (isError)
         {
             ConfirmButton.Classes.Remove("primary");
-            ConfirmButton.Classes.Add("pending");
+            ConfirmButton.Classes.Remove("pending");
+            ConfirmButton.Classes.Add("destructive");
         }
     }
 

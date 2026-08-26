@@ -9,6 +9,7 @@ public partial class LoadoutManagerWindow : Window
     public LoadoutManagerWindow()
     {
         InitializeComponent();
+        HudModalChrome.Attach(this);
     }
 
     public LoadoutManagerWindow(MainViewModel viewModel) : this()

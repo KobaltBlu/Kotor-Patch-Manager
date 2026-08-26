@@ -187,6 +187,64 @@
         <Setter Property="BorderBrush" Value="{DynamicResource SelectionBorderBrush}"/>
     </Style>
 
+    <Style Selector="Button.destructive">
+        <Setter Property="Background" Value="{DynamicResource ErrorBackgroundBrush}"/>
+        <Setter Property="Foreground" Value="{DynamicResource ErrorBrush}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource ErrorBrush}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+    </Style>
+    <Style Selector="Button.destructive:pointerover /template/ ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource ErrorBrush}"/>
+        <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource ErrorBrush}"/>
+    </Style>
+    <Style Selector="Button.destructive:pressed /template/ ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource ErrorBackgroundBrush}"/>
+        <Setter Property="Foreground" Value="{DynamicResource ErrorBrush}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource ErrorBrush}"/>
+    </Style>
+
+    <Style Selector="ComboBox">
+        <Setter Property="Background" Value="{DynamicResource PanelInsetBrush}"/>
+        <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource BorderLineBrush}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="Padding" Value="8,6"/>
+        <Setter Property="FontFamily" Value="{StaticResource HudMonoFont}"/>
+        <Setter Property="MinHeight" Value="32"/>
+    </Style>
+    <Style Selector="ComboBox:pointerover /template/ Border#Background">
+        <Setter Property="BorderBrush" Value="{DynamicResource SelectionBorderBrush}"/>
+        <Setter Property="Background" Value="{DynamicResource HoverBackgroundBrush}"/>
+    </Style>
+    <Style Selector="ComboBox:focus /template/ Border#Background">
+        <Setter Property="BorderBrush" Value="{DynamicResource SelectionBorderBrush}"/>
+        <Setter Property="Background" Value="{DynamicResource PanelInsetBrush}"/>
+    </Style>
+    <Style Selector="ComboBox /template/ Border#Background">
+        <Setter Property="Background" Value="{DynamicResource PanelInsetBrush}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource BorderLineBrush}"/>
+        <Setter Property="CornerRadius" Value="{DynamicResource HudCornerRadius}"/>
+    </Style>
+    <Style Selector="ComboBoxItem">
+        <Setter Property="Background" Value="{DynamicResource PanelFillBrush}"/>
+        <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
+        <Setter Property="Padding" Value="8,6"/>
+        <Setter Property="FontFamily" Value="{StaticResource HudMonoFont}"/>
+    </Style>
+    <Style Selector="ComboBoxItem:pointerover /template/ ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource HoverBackgroundBrush}"/>
+        <Setter Property="Foreground" Value="{DynamicResource PrimaryBrush}"/>
+    </Style>
+    <Style Selector="ComboBoxItem:selected /template/ ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource SelectionBackgroundBrush}"/>
+        <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
+    </Style>
+    <Style Selector="ComboBoxItem:selected:pointerover /template/ ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource HoverBackgroundBrush}"/>
+        <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
+    </Style>
+
     <Style Selector="Button.chrome">
         <Setter Property="Background" Value="Transparent"/>
         <Setter Property="BorderThickness" Value="0"/>
@@ -203,7 +261,7 @@
     </Style>
     <Style Selector="Button.chrome.close:pointerover /template/ ContentPresenter">
         <Setter Property="Background" Value="{DynamicResource ErrorBrush}"/>
-        <Setter Property="Foreground" Value="White"/>
+        <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
         <Setter Property="BorderThickness" Value="0"/>
     </Style>
 

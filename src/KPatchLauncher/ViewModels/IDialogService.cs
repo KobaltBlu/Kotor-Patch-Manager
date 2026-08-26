@@ -7,4 +7,5 @@ public interface IDialogService
     Task ShowAboutAsync();
     Task ShowLoadoutManagerAsync(MainViewModel viewModel);
     Task ShowSettingsAsync(MainViewModel viewModel);
+    Task ShowPatchDetailsAsync(MainViewModel viewModel);
 }

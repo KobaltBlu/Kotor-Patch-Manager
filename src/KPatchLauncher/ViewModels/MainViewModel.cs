@@ -46,6 +46,8 @@ public partial class MainViewModel : ViewModelBase
     private bool _showIncompatible;
     private string _dependencyWarning = string.Empty;
     private readonly List<string> _preferredInstallOrder = new();
+    private bool _isWorkspaceNarrow;
+    private LibrarySortOption? _selectedLibrarySortOption;
 
     public MainViewModel()
     {
@@ -81,6 +83,7 @@ public partial class MainViewModel : ViewModelBase
         OpenAboutCommand = new SimpleCommand(async () => await OpenAboutAsync());
 
         InitSystemsConsole();
+        InitLibrarySortOptions();
 
         // Load patches if path is set
         if (!string.IsNullOrWhiteSpace(_patchesPath))
@@ -123,6 +126,40 @@ public partial class MainViewModel : ViewModelBase
     public bool CanEditPaths => !IsOperationInProgress;
 
     public bool HasPendingChanges => PendingChangesCount > 0;
+
+    public bool IsWorkspaceNarrow
+    {
+        get => _isWorkspaceNarrow;
+        private set
+        {
+            if (SetProperty(ref _isWorkspaceNarrow, value))
+                OnPropertyChanged(nameof(PatchesColumnSpan));
+        }
+    }
+
+    /// <summary>
+    /// When narrow, the patches list spans both workspace columns; when wide, it uses column 0 only.
+    /// </summary>
+    public int PatchesColumnSpan => IsWorkspaceNarrow ? 2 : 1;
+
+    /// <summary>
+    /// Compact health strip when staging is healthy (detail reserved for problems).
+    /// </summary>
+    public bool ShowCompactHealth => HealthOk;
+
+    public bool ShowExpandedHealth => !HealthOk;
+
+    public ObservableCollection<LibrarySortOption> LibrarySortOptions { get; } = new();
+
+    public LibrarySortOption? SelectedLibrarySortOption
+    {
+        get => _selectedLibrarySortOption;
+        set
+        {
+            if (SetProperty(ref _selectedLibrarySortOption, value) && value != null)
+                LibrarySortMode = value.Id;
+        }
+    }
 
     public string SearchText
     {
@@ -386,6 +423,28 @@ public partial class MainViewModel : ViewModelBase
     public ICommand SelectPatchCommand { get; }
     public ICommand OpenUrlCommand { get; }
     public ICommand OpenAboutCommand { get; }
+
+    /// <summary>
+    /// Updates narrow/wide workspace flag from the main window width (no side effects).
+    /// </summary>
+    public void NotifyWindowWidth(double width)
+    {
+        IsWorkspaceNarrow = width < 900;
+    }
+
+    private void InitLibrarySortOptions()
+    {
+        LibrarySortOptions.Add(new LibrarySortOption("name", "Name"));
+        LibrarySortOptions.Add(new LibrarySortOption("author", "Author"));
+        LibrarySortOptions.Add(new LibrarySortOption("installed", "Installed"));
+        LibrarySortOptions.Add(new LibrarySortOption("pending", "Pending"));
+
+        var mode = string.IsNullOrWhiteSpace(_librarySortMode) ? "name" : _librarySortMode;
+        _selectedLibrarySortOption = LibrarySortOptions.FirstOrDefault(o =>
+                                       string.Equals(o.Id, mode, StringComparison.OrdinalIgnoreCase))
+                                   ?? LibrarySortOptions[0];
+        _librarySortMode = _selectedLibrarySortOption.Id;
+    }
 
     private bool IsInstalled(string patchId) => _installedPatchIds.Contains(patchId);
 

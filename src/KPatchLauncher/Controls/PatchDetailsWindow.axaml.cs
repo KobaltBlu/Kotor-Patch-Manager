@@ -4,13 +4,17 @@ using KPatchLauncher.ViewModels;
 
 namespace KPatchLauncher.Controls;
 
-public partial class AboutWindow : Window
+public partial class PatchDetailsWindow : Window
 {
-    public AboutWindow()
+    public PatchDetailsWindow()
     {
         InitializeComponent();
-        DataContext = new AboutViewModel();
         HudModalChrome.Attach(this);
+    }
+
+    public PatchDetailsWindow(MainViewModel viewModel) : this()
+    {
+        DataContext = viewModel;
     }
 
     private void OnClose(object? sender, RoutedEventArgs e)

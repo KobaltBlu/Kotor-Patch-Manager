@@ -1,0 +1,158 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:KPatchLauncher.ViewModels"
+             x:Class="KPatchLauncher.Controls.PatchDetailsView"
+             x:DataType="vm:MainViewModel">
+    <Grid>
+        <ScrollViewer VerticalScrollBarVisibility="Auto"
+                      AllowAutoHide="False"
+                      IsVisible="{Binding SelectedPatch, Converter={x:Static ObjectConverters.IsNotNull}}">
+            <StackPanel>
+                <StackPanel Classes="hud-section">
+                    <TextBlock Text="IDENTITY" Classes="section-title"/>
+                    <Border Classes="section-rule"/>
+                    <Border Classes="section-inset">
+                        <StackPanel Spacing="10">
+                            <StackPanel>
+                                <TextBlock Text="NAME" Classes="caption"/>
+                                <TextBlock Text="{Binding SelectedPatch.Name}"
+                                           Classes="display"
+                                           FontSize="18"
+                                           TextWrapping="Wrap"
+                                           Foreground="{DynamicResource AccentBrush}"/>
+                            </StackPanel>
+                            <TextBlock Text="{Binding SelectedPatch.TagsText}"
+                                       Classes="mono"
+                                       FontSize="11"
+                                       Foreground="{DynamicResource CaptionBrush}"
+                                       IsVisible="{Binding SelectedPatch.HasTags}"/>
+                            <Grid ColumnDefinitions="*,*" ColumnSpacing="16">
+                                <StackPanel>
+                                    <TextBlock Text="VERSION" Classes="caption"/>
+                                    <TextBlock Text="{Binding SelectedPatch.Version}" Classes="mono"/>
+                                </StackPanel>
+                                <StackPanel Grid.Column="1">
+                                    <TextBlock Text="AUTHOR" Classes="caption"/>
+                                    <TextBlock Text="{Binding SelectedPatch.Author}"
+                                               TextWrapping="Wrap"/>
+                                </StackPanel>
+                            </Grid>
+                            <StackPanel>
+                                <TextBlock Text="DESCRIPTION" Classes="caption"/>
+                                <TextBlock Text="{Binding SelectedPatch.Description}" TextWrapping="Wrap"/>
+                            </StackPanel>
+                            <StackPanel IsVisible="{Binding SelectedPatch.HasLicense}">
+                                <TextBlock Text="LICENSE" Classes="caption"/>
+                                <TextBlock Text="{Binding SelectedPatch.License}" TextWrapping="Wrap"/>
+                            </StackPanel>
+                            <StackPanel IsVisible="{Binding SelectedPatch.HasUrl}">
+                                <TextBlock Text="URL" Classes="caption"/>
+                                <Button Classes="link"
+                                        Content="{Binding SelectedPatch.Url}"
+                                        Command="{Binding OpenUrlCommand}"
+                                        CommandParameter="{Binding SelectedPatch.Url}"/>
+                            </StackPanel>
+                            <TextBlock Text="{Binding SelectedPatch.AdditionalFilesNote}"
+                                       TextWrapping="Wrap"
+                                       FontSize="12"
+                                       Foreground="{DynamicResource WarningBrush}"
+                                       IsVisible="{Binding SelectedPatch.HasAdditionalFiles}"/>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+
+                <StackPanel Classes="hud-section"
+                            IsVisible="{Binding SelectedPatch.HasDependencies}">
+                    <TextBlock Text="DEPENDENCIES" Classes="section-title"/>
+                    <Border Classes="section-rule"/>
+                    <Border Classes="section-inset">
+                        <StackPanel Spacing="10">
+                            <StackPanel IsVisible="{Binding SelectedPatch.HasRequires}">
+                                <TextBlock Text="REQUIRES" Classes="caption"/>
+                                <ItemsControl ItemsSource="{Binding SelectedPatch.Requires}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Button Classes="link"
+                                                    Content="{Binding}"
+                                                    Command="{Binding $parent[Window].DataContext.SelectPatchCommand}"
+                                                    CommandParameter="{Binding}"/>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </StackPanel>
+                            <StackPanel IsVisible="{Binding SelectedPatch.HasConflicts}">
+                                <TextBlock Text="CONFLICTS" Classes="caption"/>
+                                <ItemsControl ItemsSource="{Binding SelectedPatch.Conflicts}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Button Classes="link"
+                                                    Content="{Binding}"
+                                                    Command="{Binding $parent[Window].DataContext.SelectPatchCommand}"
+                                                    CommandParameter="{Binding}"/>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+
+                <StackPanel Classes="hud-section" Margin="0">
+                    <TextBlock Text="COMPATIBILITY" Classes="section-title"/>
+                    <Border Classes="section-rule"/>
+                    <Border Classes="section-inset">
+                        <StackPanel Spacing="10">
+                            <StackPanel IsVisible="{Binding SelectedPatch.HasSupportedVersions}">
+                                <TextBlock Text="SUPPORTED VERSIONS" Classes="caption"/>
+                                <TextBlock Text="{Binding SelectedPatch.SupportedVersionsText}"
+                                           Classes="mono"
+                                           TextWrapping="Wrap"
+                                           FontSize="12"/>
+                            </StackPanel>
+                            <StackPanel>
+                                <TextBlock Text="STATUS" Classes="caption"/>
+                                <TextBlock Text="{Binding SelectedPatch.CompatibilityStatus}" TextWrapping="Wrap"/>
+                            </StackPanel>
+                            <Border Background="{DynamicResource ErrorBackgroundBrush}"
+                                    BorderBrush="{DynamicResource ErrorBrush}"
+                                    BorderThickness="1"
+                                    Padding="8"
+                                    IsVisible="{Binding SelectedPatch.IsOrphaned}">
+                                <StackPanel Spacing="4">
+                                    <TextBlock Text="ORPHANED PATCH"
+                                               Classes="display"
+                                               FontSize="12"
+                                               Foreground="{DynamicResource ErrorBrush}"/>
+                                    <TextBlock Text="Installed in the game but missing from the patches directory. Unchecking it uninstalls it."
+                                               TextWrapping="Wrap"
+                                               FontSize="12"/>
+                                </StackPanel>
+                            </Border>
+                            <Border Background="{DynamicResource PanelFillBrush}"
+                                    BorderBrush="{DynamicResource WarningBrush}"
+                                    BorderThickness="1"
+                                    Padding="8"
+                                    IsVisible="{Binding HasDependencyWarning}">
+                                <StackPanel Spacing="4">
+                                    <TextBlock Text="DEPENDENCY WARNING"
+                                               Classes="display"
+                                               FontSize="12"
+                                               Foreground="{DynamicResource WarningBrush}"/>
+                                    <TextBlock Text="{Binding DependencyWarning}"
+                                               TextWrapping="Wrap"
+                                               FontSize="12"/>
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </StackPanel>
+        </ScrollViewer>
+        <TextBlock Text="Select a patch to view details"
+                   Classes="caption"
+                   Opacity="0.7"
+                   VerticalAlignment="Center"
+                   HorizontalAlignment="Center"
+                   IsVisible="{Binding SelectedPatch, Converter={x:Static ObjectConverters.IsNull}}"/>
+    </Grid>
+</UserControl>

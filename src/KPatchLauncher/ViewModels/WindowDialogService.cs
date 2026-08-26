@@ -44,4 +44,10 @@ public sealed class WindowDialogService : IDialogService
         var dialog = new SettingsWindow(viewModel);
         await dialog.ShowDialog(_owner);
     }
+
+    public async Task ShowPatchDetailsAsync(MainViewModel viewModel)
+    {
+        var dialog = new PatchDetailsWindow(viewModel);
+        await dialog.ShowDialog(_owner);
+    }
 }

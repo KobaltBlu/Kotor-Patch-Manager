@@ -9,6 +9,7 @@ public partial class SettingsWindow : Window
     public SettingsWindow()
     {
         InitializeComponent();
+        HudModalChrome.Attach(this);
     }
 
     public SettingsWindow(MainViewModel viewModel) : this()

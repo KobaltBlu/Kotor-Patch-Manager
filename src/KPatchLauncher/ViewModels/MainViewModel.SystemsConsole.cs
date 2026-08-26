@@ -141,6 +141,14 @@ public partial class MainViewModel
             {
                 _settings.LibrarySortMode = value;
                 _settings.Save();
+                var match = LibrarySortOptions.FirstOrDefault(o =>
+                    string.Equals(o.Id, value, StringComparison.OrdinalIgnoreCase));
+                if (match != null && !ReferenceEquals(_selectedLibrarySortOption, match))
+                {
+                    _selectedLibrarySortOption = match;
+                    OnPropertyChanged(nameof(SelectedLibrarySortOption));
+                }
+
                 SyncVisiblePatches();
             }
         }
@@ -167,7 +175,14 @@ public partial class MainViewModel
     public bool HealthOk
     {
         get => _healthOk;
-        private set => SetProperty(ref _healthOk, value);
+        private set
+        {
+            if (SetProperty(ref _healthOk, value))
+            {
+                OnPropertyChanged(nameof(ShowCompactHealth));
+                OnPropertyChanged(nameof(ShowExpandedHealth));
+            }
+        }
     }
 
     public bool HasEmptyLibrary =>

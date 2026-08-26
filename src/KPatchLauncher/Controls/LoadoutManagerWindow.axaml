@@ -86,7 +86,7 @@
                                         ToolTip.Tip="Duplicate the selected loadout"/>
                                 <Button Content="DELETE"
                                         Command="{Binding DeleteLoadoutCommand}"
-                                        Classes="pending"
+                                        Classes="destructive"
                                         MinWidth="80"
                                         MinHeight="32"
                                         Padding="10,4"

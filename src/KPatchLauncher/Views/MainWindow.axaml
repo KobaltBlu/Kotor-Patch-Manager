@@ -9,7 +9,7 @@
         x:DataType="vm:MainViewModel"
         Title="KotOR Patch Manager"
         Width="1100" Height="740"
-        MinWidth="800" MinHeight="600"
+        MinWidth="720" MinHeight="540"
         Background="{DynamicResource BackgroundBrush}"
         Foreground="{DynamicResource TextBrush}"
         ExtendClientAreaToDecorationsHint="True"
@@ -147,13 +147,13 @@
                                Subtitle="{Binding KotorVersion, StringFormat=Detected: {0}}"
                                Margin="16,8,16,0">
                 <controls:HudPanel.HeaderContent>
-                    <StackPanel Orientation="Horizontal" Spacing="6">
+                    <StackPanel Orientation="Horizontal" Spacing="6"
+                                IsVisible="{Binding !IsFirstRun}">
                         <Button Content="SETTINGS"
                                 Command="{Binding OpenSettingsCommand}"
                                 MinWidth="88"
                                 MinHeight="28"
                                 Padding="8,4"
-                                IsVisible="{Binding !IsFirstRun}"
                                 ToolTip.Tip="Edit game and patches paths"/>
                         <ComboBox ItemsSource="{Binding LoadoutPickerItems}"
                                   SelectedItem="{Binding SelectedLoadoutPickerItem, Mode=TwoWay}"
@@ -177,7 +177,7 @@
                                 ToolTip.Tip="Manage loadouts (save, delete, import, export)"/>
                     </StackPanel>
                 </controls:HudPanel.HeaderContent>
-                <Panel>
+                <Panel IsVisible="{Binding !IsFirstRun}">
                     <Grid IsVisible="{Binding !HasConfiguredPaths}"
                           ColumnDefinitions="*,12,*">
                         <controls:PathField Label="GAME"
@@ -192,49 +192,39 @@
                                             BrowseCommand="{Binding BrowsePatchesCommand}"
                                             IsBrowseEnabled="{Binding CanEditPaths}"/>
                     </Grid>
-                    <Grid IsVisible="{Binding HasConfiguredPaths}"
-                          ColumnDefinitions="*,Auto">
-                        <StackPanel Orientation="Horizontal"
-                                    Spacing="16"
-                                    VerticalAlignment="Center">
-                            <StackPanel Orientation="Horizontal" Spacing="6">
-                                <TextBlock Text="GAME"
-                                           Classes="caption"
-                                           VerticalAlignment="Center"/>
-                                <TextBlock Text="{Binding GamePathDisplay}"
-                                           Classes="mono"
-                                           FontSize="12"
-                                           VerticalAlignment="Center"
-                                           TextTrimming="CharacterEllipsis"
-                                           MaxWidth="220"
-                                           ToolTip.Tip="{Binding GamePath}"/>
-                            </StackPanel>
-                            <TextBlock Text="|"
-                                       Foreground="{DynamicResource CaptionBrush}"
+                    <StackPanel IsVisible="{Binding HasConfiguredPaths}"
+                                Orientation="Horizontal"
+                                Spacing="16"
+                                VerticalAlignment="Center">
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <TextBlock Text="GAME"
+                                       Classes="caption"
+                                       VerticalAlignment="Center"/>
+                            <TextBlock Text="{Binding GamePathDisplay}"
+                                       Classes="mono"
+                                       FontSize="12"
                                        VerticalAlignment="Center"
-                                       Opacity="0.6"/>
-                            <StackPanel Orientation="Horizontal" Spacing="6">
-                                <TextBlock Text="PATCHES"
-                                           Classes="caption"
-                                           VerticalAlignment="Center"/>
-                                <TextBlock Text="{Binding PatchesPathDisplay}"
-                                           Classes="mono"
-                                           FontSize="12"
-                                           VerticalAlignment="Center"
-                                           TextTrimming="CharacterEllipsis"
-                                           MaxWidth="220"
-                                           ToolTip.Tip="{Binding PatchesPath}"/>
-                            </StackPanel>
+                                       TextTrimming="CharacterEllipsis"
+                                       MaxWidth="220"
+                                       ToolTip.Tip="{Binding GamePath}"/>
                         </StackPanel>
-                        <Button Grid.Column="1"
-                                Content="EDIT"
-                                Command="{Binding OpenSettingsCommand}"
-                                MinWidth="72"
-                                MinHeight="28"
-                                Padding="8,4"
-                                VerticalAlignment="Center"
-                                ToolTip.Tip="Edit game and patches paths"/>
-                    </Grid>
+                        <TextBlock Text="|"
+                                   Foreground="{DynamicResource CaptionBrush}"
+                                   VerticalAlignment="Center"
+                                   Opacity="0.6"/>
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <TextBlock Text="PATCHES"
+                                       Classes="caption"
+                                       VerticalAlignment="Center"/>
+                            <TextBlock Text="{Binding PatchesPathDisplay}"
+                                       Classes="mono"
+                                       FontSize="12"
+                                       VerticalAlignment="Center"
+                                       TextTrimming="CharacterEllipsis"
+                                       MaxWidth="220"
+                                       ToolTip.Tip="{Binding PatchesPath}"/>
+                        </StackPanel>
+                    </StackPanel>
                 </Panel>
             </controls:HudPanel>
 
@@ -265,10 +255,13 @@
                     </StackPanel>
                 </controls:HudPanel>
 
-                <Grid ColumnDefinitions="2*,3*"
+                <Grid x:Name="WorkspaceGrid"
+                      ColumnDefinitions="2*,3*"
                       ColumnSpacing="12"
                       IsVisible="{Binding !IsFirstRun}">
                     <controls:HudPanel x:Name="PatchesPanel"
+                                       Grid.Column="0"
+                                       Grid.ColumnSpan="{Binding PatchesColumnSpan}"
                                        Header="PATCHES"
                                        DragDrop.AllowDrop="True">
                         <controls:HudPanel.HeaderContent>
@@ -283,12 +276,12 @@
                                         Content="↑"
                                         Command="{Binding MoveUpCommand}"
                                         CommandParameter="{Binding SelectedPatch}"
-                                        ToolTip.Tip="Earlier install order"/>
+                                        ToolTip.Tip="Change install order (list sort does not change staging order)"/>
                                 <Button Classes="icon"
                                         Content="↓"
                                         Command="{Binding MoveDownCommand}"
                                         CommandParameter="{Binding SelectedPatch}"
-                                        ToolTip.Tip="Later install order"/>
+                                        ToolTip.Tip="Change install order (list sort does not change staging order)"/>
                             </StackPanel>
                         </controls:HudPanel.HeaderContent>
                         <DockPanel>
@@ -297,31 +290,36 @@
                                      Text="{Binding SearchText}"
                                      Watermark="Search name, author, id"
                                      Margin="0,0,0,8"/>
+                            <TextBlock DockPanel.Dock="Top"
+                                       Text="Select a patch for details"
+                                       Classes="caption"
+                                       Margin="0,0,0,8"
+                                       IsVisible="{Binding IsWorkspaceNarrow}"/>
                             <Grid DockPanel.Dock="Top"
                                   ColumnDefinitions="*,Auto,Auto"
                                   Margin="0,0,0,8">
                                 <CheckBox IsThreeState="True"
                                           IsChecked="{Binding SelectAllPatches}"
                                           IsEnabled="{Binding HasVisiblePatches}">
-                                    <TextBlock Text="Select All"
+                                    <TextBlock Text="SELECT ALL"
                                                Foreground="{DynamicResource PrimaryBrush}"/>
                                 </CheckBox>
                                 <ComboBox Grid.Column="1"
-                                          SelectedItem="{Binding LibrarySortMode}"
-                                          Width="110"
+                                          ItemsSource="{Binding LibrarySortOptions}"
+                                          SelectedItem="{Binding SelectedLibrarySortOption}"
+                                          Width="120"
                                           Margin="0,0,8,0"
                                           MinHeight="28"
                                           ToolTip.Tip="Sort library">
-                                    <ComboBox.Items>
-                                        <x:String>name</x:String>
-                                        <x:String>author</x:String>
-                                        <x:String>installed</x:String>
-                                        <x:String>pending</x:String>
-                                    </ComboBox.Items>
+                                    <ComboBox.ItemTemplate>
+                                        <DataTemplate x:DataType="vm:LibrarySortOption">
+                                            <TextBlock Text="{Binding Label}"/>
+                                        </DataTemplate>
+                                    </ComboBox.ItemTemplate>
                                 </ComboBox>
                                 <CheckBox Grid.Column="2"
                                           IsChecked="{Binding ShowIncompatible}"
-                                          Content="Show incompatible"/>
+                                          Content="SHOW INCOMPATIBLE"/>
                             </Grid>
                             <TextBlock DockPanel.Dock="Top"
                                        Text="{Binding EmptyLibraryMessage}"
@@ -370,162 +368,11 @@
                         </DockPanel>
                     </controls:HudPanel>
 
-                    <controls:HudPanel Grid.Column="1" Header="PATCH DETAILS">
-                        <Grid>
-                            <ScrollViewer VerticalScrollBarVisibility="Auto"
-                                          AllowAutoHide="False"
-                                          IsVisible="{Binding SelectedPatch, Converter={x:Static ObjectConverters.IsNotNull}}">
-                                <StackPanel>
-                                    <!-- Identity -->
-                                    <StackPanel Classes="hud-section">
-                                        <TextBlock Text="IDENTITY" Classes="section-title"/>
-                                        <Border Classes="section-rule"/>
-                                        <Border Classes="section-inset">
-                                            <StackPanel Spacing="10">
-                                                <StackPanel>
-                                                    <TextBlock Text="NAME" Classes="caption"/>
-                                                    <TextBlock Text="{Binding SelectedPatch.Name}"
-                                                               Classes="display"
-                                                               FontSize="18"
-                                                               TextWrapping="Wrap"
-                                                               Foreground="{DynamicResource AccentBrush}"/>
-                                                </StackPanel>
-                                                <TextBlock Text="{Binding SelectedPatch.TagsText}"
-                                                           Classes="mono"
-                                                           FontSize="11"
-                                                           Foreground="{DynamicResource CaptionBrush}"
-                                                           IsVisible="{Binding SelectedPatch.HasTags}"/>
-                                                <Grid ColumnDefinitions="*,*" ColumnSpacing="16">
-                                                    <StackPanel>
-                                                        <TextBlock Text="VERSION" Classes="caption"/>
-                                                        <TextBlock Text="{Binding SelectedPatch.Version}" Classes="mono"/>
-                                                    </StackPanel>
-                                                    <StackPanel Grid.Column="1">
-                                                        <TextBlock Text="AUTHOR" Classes="caption"/>
-                                                        <TextBlock Text="{Binding SelectedPatch.Author}"
-                                                                   TextWrapping="Wrap"/>
-                                                    </StackPanel>
-                                                </Grid>
-                                                <StackPanel>
-                                                    <TextBlock Text="DESCRIPTION" Classes="caption"/>
-                                                    <TextBlock Text="{Binding SelectedPatch.Description}" TextWrapping="Wrap"/>
-                                                </StackPanel>
-                                                <StackPanel IsVisible="{Binding SelectedPatch.HasLicense}">
-                                                    <TextBlock Text="LICENSE" Classes="caption"/>
-                                                    <TextBlock Text="{Binding SelectedPatch.License}" TextWrapping="Wrap"/>
-                                                </StackPanel>
-                                                <StackPanel IsVisible="{Binding SelectedPatch.HasUrl}">
-                                                    <TextBlock Text="URL" Classes="caption"/>
-                                                    <Button Classes="link"
-                                                            Content="{Binding SelectedPatch.Url}"
-                                                            Command="{Binding OpenUrlCommand}"
-                                                            CommandParameter="{Binding SelectedPatch.Url}"/>
-                                                </StackPanel>
-                                                <TextBlock Text="{Binding SelectedPatch.AdditionalFilesNote}"
-                                                           TextWrapping="Wrap"
-                                                           FontSize="12"
-                                                           Foreground="{DynamicResource WarningBrush}"
-                                                           IsVisible="{Binding SelectedPatch.HasAdditionalFiles}"/>
-                                            </StackPanel>
-                                        </Border>
-                                    </StackPanel>
-
-                                    <!-- Dependencies -->
-                                    <StackPanel Classes="hud-section"
-                                                IsVisible="{Binding SelectedPatch.HasDependencies}">
-                                        <TextBlock Text="DEPENDENCIES" Classes="section-title"/>
-                                        <Border Classes="section-rule"/>
-                                        <Border Classes="section-inset">
-                                            <StackPanel Spacing="10">
-                                                <StackPanel IsVisible="{Binding SelectedPatch.HasRequires}">
-                                                    <TextBlock Text="REQUIRES" Classes="caption"/>
-                                                    <ItemsControl ItemsSource="{Binding SelectedPatch.Requires}">
-                                                        <ItemsControl.ItemTemplate>
-                                                            <DataTemplate>
-                                                                <Button Classes="link"
-                                                                        Content="{Binding}"
-                                                                        Command="{Binding $parent[Window].DataContext.SelectPatchCommand}"
-                                                                        CommandParameter="{Binding}"/>
-                                                            </DataTemplate>
-                                                        </ItemsControl.ItemTemplate>
-                                                    </ItemsControl>
-                                                </StackPanel>
-                                                <StackPanel IsVisible="{Binding SelectedPatch.HasConflicts}">
-                                                    <TextBlock Text="CONFLICTS" Classes="caption"/>
-                                                    <ItemsControl ItemsSource="{Binding SelectedPatch.Conflicts}">
-                                                        <ItemsControl.ItemTemplate>
-                                                            <DataTemplate>
-                                                                <Button Classes="link"
-                                                                        Content="{Binding}"
-                                                                        Command="{Binding $parent[Window].DataContext.SelectPatchCommand}"
-                                                                        CommandParameter="{Binding}"/>
-                                                            </DataTemplate>
-                                                        </ItemsControl.ItemTemplate>
-                                                    </ItemsControl>
-                                                </StackPanel>
-                                            </StackPanel>
-                                        </Border>
-                                    </StackPanel>
-
-                                    <!-- Compatibility -->
-                                    <StackPanel Classes="hud-section" Margin="0">
-                                        <TextBlock Text="COMPATIBILITY" Classes="section-title"/>
-                                        <Border Classes="section-rule"/>
-                                        <Border Classes="section-inset">
-                                            <StackPanel Spacing="10">
-                                                <StackPanel IsVisible="{Binding SelectedPatch.HasSupportedVersions}">
-                                                    <TextBlock Text="SUPPORTED VERSIONS" Classes="caption"/>
-                                                    <TextBlock Text="{Binding SelectedPatch.SupportedVersionsText}"
-                                                               Classes="mono"
-                                                               TextWrapping="Wrap"
-                                                               FontSize="12"/>
-                                                </StackPanel>
-                                                <StackPanel>
-                                                    <TextBlock Text="STATUS" Classes="caption"/>
-                                                    <TextBlock Text="{Binding SelectedPatch.CompatibilityStatus}" TextWrapping="Wrap"/>
-                                                </StackPanel>
-                                                <Border Background="{DynamicResource ErrorBackgroundBrush}"
-                                                        BorderBrush="{DynamicResource ErrorBrush}"
-                                                        BorderThickness="1"
-                                                        Padding="8"
-                                                        IsVisible="{Binding SelectedPatch.IsOrphaned}">
-                                                    <StackPanel Spacing="4">
-                                                        <TextBlock Text="ORPHANED PATCH"
-                                                                   Classes="display"
-                                                                   FontSize="12"
-                                                                   Foreground="{DynamicResource ErrorBrush}"/>
-                                                        <TextBlock Text="Installed in the game but missing from the patches directory. Unchecking it uninstalls it."
-                                                                   TextWrapping="Wrap"
-                                                                   FontSize="12"/>
-                                                    </StackPanel>
-                                                </Border>
-                                                <Border Background="{DynamicResource PanelFillBrush}"
-                                                        BorderBrush="{DynamicResource WarningBrush}"
-                                                        BorderThickness="1"
-                                                        Padding="8"
-                                                        IsVisible="{Binding HasDependencyWarning}">
-                                                    <StackPanel Spacing="4">
-                                                        <TextBlock Text="DEPENDENCY WARNING"
-                                                                   Classes="display"
-                                                                   FontSize="12"
-                                                                   Foreground="{DynamicResource WarningBrush}"/>
-                                                        <TextBlock Text="{Binding DependencyWarning}"
-                                                                   TextWrapping="Wrap"
-                                                                   FontSize="12"/>
-                                                    </StackPanel>
-                                                </Border>
-                                            </StackPanel>
-                                        </Border>
-                                    </StackPanel>
-                                </StackPanel>
-                            </ScrollViewer>
-                            <TextBlock Text="Select a patch to view details"
-                                       Classes="caption"
-                                       Opacity="0.7"
-                                       VerticalAlignment="Center"
-                                       HorizontalAlignment="Center"
-                                       IsVisible="{Binding SelectedPatch, Converter={x:Static ObjectConverters.IsNull}}"/>
-                        </Grid>
+                    <controls:HudPanel x:Name="DetailsPanel"
+                                       Grid.Column="1"
+                                       Header="PATCH DETAILS"
+                                       IsVisible="{Binding !IsWorkspaceNarrow}">
+                        <controls:PatchDetailsView/>
                     </controls:HudPanel>
                 </Grid>
             </Grid>
@@ -544,20 +391,37 @@
                     <Border DockPanel.Dock="Top"
                             Classes="section-inset"
                             Margin="0,0,0,10"
-                            BorderBrush="{DynamicResource PrimaryBrush}">
+                            BorderBrush="{DynamicResource PrimaryBrush}"
+                            IsVisible="{Binding ShowCompactHealth}">
+                        <Grid ColumnDefinitions="*,Auto">
+                            <TextBlock Text="{Binding HealthSummary}"
+                                       Classes="mono"
+                                       FontSize="12"
+                                       VerticalAlignment="Center"
+                                       Foreground="{DynamicResource SuccessBrush}"
+                                       TextTrimming="CharacterEllipsis"/>
+                            <Button Grid.Column="1"
+                                    Content="REPAIR"
+                                    Command="{Binding RepairStagingCommand}"
+                                    MinWidth="88"
+                                    MinHeight="28"
+                                    VerticalAlignment="Center"
+                                    Margin="12,0,0,0"
+                                    ToolTip.Tip="Re-apply current selection to repair staging"/>
+                        </Grid>
+                    </Border>
+                    <Border DockPanel.Dock="Top"
+                            Classes="section-inset"
+                            Margin="0,0,0,10"
+                            BorderBrush="{DynamicResource PrimaryBrush}"
+                            IsVisible="{Binding ShowExpandedHealth}">
                         <Grid ColumnDefinitions="*,Auto">
                             <StackPanel>
                                 <TextBlock Text="STATUS" Classes="caption"/>
                                 <TextBlock Text="{Binding HealthSummary}"
                                            Classes="mono"
                                            FontSize="12"
-                                           Foreground="{DynamicResource SuccessBrush}"
-                                           IsVisible="{Binding HealthOk}"/>
-                                <TextBlock Text="{Binding HealthSummary}"
-                                           Classes="mono"
-                                           FontSize="12"
-                                           Foreground="{DynamicResource WarningBrush}"
-                                           IsVisible="{Binding !HealthOk}"/>
+                                           Foreground="{DynamicResource WarningBrush}"/>
                                 <TextBlock Text="{Binding HealthDetail}"
                                            TextWrapping="Wrap"
                                            FontSize="11"
@@ -591,11 +455,14 @@
                     <Grid ColumnDefinitions="*,Auto">
                         <StackPanel Orientation="Horizontal"
                                     Spacing="16"
-                                    VerticalAlignment="Center">
+                                    VerticalAlignment="Center"
+                                    Margin="0,0,12,0">
                             <TextBlock Text="{Binding StatusMessage}"
                                        Classes="mono"
                                        FontSize="12"
-                                       VerticalAlignment="Center"/>
+                                       VerticalAlignment="Center"
+                                       TextTrimming="CharacterEllipsis"
+                                       ToolTip.Tip="{Binding StatusMessage}"/>
                             <TextBlock Text="•"
                                        Foreground="{DynamicResource CaptionBrush}"
                                        VerticalAlignment="Center"
@@ -604,13 +471,16 @@
                                        Classes="mono"
                                        FontSize="12"
                                        Foreground="{DynamicResource AccentBrush}"
-                                       VerticalAlignment="Center"/>
+                                       VerticalAlignment="Center"
+                                       TextTrimming="CharacterEllipsis"
+                                       ToolTip.Tip="{Binding PendingChangesMessage}"/>
                         </StackPanel>
                         <StackPanel Grid.Column="1"
                                     Orientation="Horizontal"
                                     Spacing="10">
                             <Button Content="UNINSTALL ALL"
                                     Command="{Binding UninstallAllCommand}"
+                                    Classes="destructive"
                                     MinWidth="140"
                                     Height="36"/>
                             <Button Content="APPLY"
