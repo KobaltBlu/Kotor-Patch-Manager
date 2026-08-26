@@ -33,31 +33,28 @@
                         <StackPanel Spacing="10">
                             <StackPanel>
                                 <TextBlock Text="SELECTED" Classes="caption"/>
-                                <ComboBox ItemsSource="{Binding AvailableLoadouts}"
-                                          SelectedItem="{Binding ActiveLoadout}"
+                                <ComboBox ItemsSource="{Binding LoadoutPickerItems}"
+                                          SelectedItem="{Binding SelectedLoadoutPickerItem, Mode=TwoWay}"
                                           MinHeight="32"
                                           HorizontalAlignment="Stretch"
-                                          PlaceholderText="No loadout selected"
-                                          ToolTip.Tip="Select a named loadout to update the checklist. APPLY stages the game.">
+                                          ToolTip.Tip="None keeps the checklist unbound. Named loadouts update checks; APPLY stages the game.">
                                     <ComboBox.ItemTemplate>
-                                        <DataTemplate>
-                                            <TextBlock Text="{Binding Name}"/>
+                                        <DataTemplate x:DataType="vm:LoadoutPickerItem">
+                                            <TextBlock Text="{Binding DisplayName}"/>
                                         </DataTemplate>
                                     </ComboBox.ItemTemplate>
                                 </ComboBox>
-                            </StackPanel>
-                            <StackPanel>
-                                <TextBlock Text="STATUS" Classes="caption"/>
-                                <TextBlock Text="{Binding ActiveLoadoutDisplayName}"
-                                           FontSize="13"
-                                           Opacity="0.9"/>
-                                <TextBlock Text="{Binding LoadoutDirtyHint}"
+                                <TextBlock Text="No saved loadouts — set checks, then SAVE."
+                                           Classes="caption"
                                            TextWrapping="Wrap"
-                                           FontSize="12"
-                                           Foreground="{DynamicResource WarningBrush}"
-                                           IsVisible="{Binding IsLoadoutDirty}"
-                                           Margin="0,4,0,0"/>
+                                           Margin="0,6,0,0"
+                                           IsVisible="{Binding HasNoSavedLoadouts}"/>
                             </StackPanel>
+                            <TextBlock Text="{Binding LoadoutDirtyHint}"
+                                       TextWrapping="Wrap"
+                                       FontSize="12"
+                                       Foreground="{DynamicResource WarningBrush}"
+                                       IsVisible="{Binding IsLoadoutDirty}"/>
                         </StackPanel>
                     </Border>
                 </StackPanel>
@@ -81,25 +78,19 @@
                                         MinHeight="32"
                                         Padding="10,4"
                                         ToolTip.Tip="Save checklist into the selected loadout, or create/overwrite by name. APPLY still stages the game."/>
-                                <Button Content="DUP"
+                                <Button Content="DUPLICATE"
                                         Command="{Binding DuplicateLoadoutCommand}"
-                                        MinWidth="64"
+                                        MinWidth="96"
                                         MinHeight="32"
-                                        Padding="8,4"
+                                        Padding="10,4"
                                         ToolTip.Tip="Duplicate the selected loadout"/>
-                                <Button Content="DEL"
+                                <Button Content="DELETE"
                                         Command="{Binding DeleteLoadoutCommand}"
                                         Classes="pending"
-                                        MinWidth="64"
+                                        MinWidth="80"
                                         MinHeight="32"
-                                        Padding="8,4"
+                                        Padding="10,4"
                                         ToolTip.Tip="Delete the selected loadout"/>
-                                <Button Content="CLR"
-                                        Command="{Binding ClearLoadoutCommand}"
-                                        MinWidth="64"
-                                        MinHeight="32"
-                                        Padding="8,4"
-                                        ToolTip.Tip="Clear loadout selection without changing checklist"/>
                             </StackPanel>
                         </StackPanel>
                     </Border>

@@ -92,23 +92,30 @@
                             IsVisible="{Binding HasKotor2Memory}"
                             ToolTip.Tip="Switch to remembered KotOR 2"/>
                     <Button Classes="icon"
-                            Width="36"
-                            Margin="14,0,0,0"
-                            Command="{Binding RefreshCommand}"
-                            ToolTip.Tip="Refresh patches and status">
-                        <Viewbox Width="16" Height="16">
-                            <Canvas Width="24" Height="24">
-                                <!-- One thick clockwise arc with a clear gap -->
-                                <Path Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
-                                      StrokeThickness="2.75"
-                                      StrokeLineCap="Round"
-                                      Data="M5.2,14.8 A7.4,7.4 0 1 1 16.8,6.4"/>
-                                <!-- Single arrowhead at the open end -->
-                                <Path Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
-                                      Data="M16.8,2.2 L21.6,7.4 L13.9,8.2 Z"/>
-                            </Canvas>
-                        </Viewbox>
-                    </Button>
+                        Width="36"
+                        Margin="14,0,0,0"
+                        Command="{Binding RefreshCommand}"
+                        ToolTip.Tip="Refresh patches and status">
+
+                    <Path Width="16"
+                        Height="16"
+                        Stretch="Uniform"
+                        Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                        Data="M17.65,6.35
+                                C16.2,4.9 14.21,4 12,4
+                                C7.58,4 4,7.58 4,12
+                                C4,16.42 7.58,20 12,20
+                                C15.73,20 18.84,17.45 19.73,14
+                                L17.65,14
+                                C16.83,16.33 14.61,18 12,18
+                                C8.69,18 6,15.31 6,12
+                                C6,8.69 8.69,6 12,6
+                                C13.66,6 15.14,6.69 16.22,7.78
+                                L13,11
+                                L20,11
+                                L20,4
+                                Z" />
+                </Button>
                 </StackPanel>
                 <StackPanel Grid.Column="2"
                             Orientation="Horizontal"
@@ -148,18 +155,26 @@
                                 Padding="8,4"
                                 IsVisible="{Binding !IsFirstRun}"
                                 ToolTip.Tip="Edit game and patches paths"/>
+                        <ComboBox ItemsSource="{Binding LoadoutPickerItems}"
+                                  SelectedItem="{Binding SelectedLoadoutPickerItem, Mode=TwoWay}"
+                                  MinHeight="28"
+                                  MinWidth="120"
+                                  MaxWidth="180"
+                                  VerticalAlignment="Center"
+                                  ToolTip.Tip="{Binding SelectedLoadoutPickerTip}">
+                            <ComboBox.ItemTemplate>
+                                <DataTemplate x:DataType="vm:LoadoutPickerItem">
+                                    <TextBlock Text="{Binding DisplayName}"
+                                               TextTrimming="CharacterEllipsis"/>
+                                </DataTemplate>
+                            </ComboBox.ItemTemplate>
+                        </ComboBox>
                         <Button Content="{Binding LoadoutManagerButtonLabel}"
                                 Command="{Binding OpenLoadoutManagerCommand}"
                                 MinWidth="96"
                                 MinHeight="28"
                                 Padding="8,4"
-                                ToolTip.Tip="Open loadout manager"/>
-                        <TextBlock Text="{Binding ActiveLoadoutDisplayName}"
-                                   VerticalAlignment="Center"
-                                   FontSize="11"
-                                   Opacity="0.85"
-                                   MinWidth="24"
-                                   ToolTip.Tip="{Binding LoadoutDirtyHint}"/>
+                                ToolTip.Tip="Manage loadouts (save, delete, import, export)"/>
                     </StackPanel>
                 </controls:HudPanel.HeaderContent>
                 <Panel>

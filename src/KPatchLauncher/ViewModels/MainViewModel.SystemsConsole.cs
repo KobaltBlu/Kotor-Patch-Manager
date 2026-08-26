@@ -19,9 +19,11 @@ public partial class MainViewModel
     private bool _healthOk = true;
     private bool _isLoadoutDirty;
     private bool _suppressLoadoutSelection;
-    private bool _loadoutSwitchInProgress;
+    private LoadoutPickerItem? _selectedLoadoutPickerItem = LoadoutPickerItem.None;
 
     public ObservableCollection<PatchLoadout> AvailableLoadouts { get; } = new();
+
+    public ObservableCollection<LoadoutPickerItem> LoadoutPickerItems { get; } = new();
 
     public PatchLoadout? ActiveLoadout
     {
@@ -38,17 +40,35 @@ public partial class MainViewModel
             if (ReferenceEquals(_activeLoadout, value))
                 return;
 
-            if (_loadoutSwitchInProgress)
-                return;
+            CommitActiveLoadout(value, applyChecks: value != null);
+        }
+    }
 
-            if (_activeLoadout != null && IsLoadoutDirty)
+    /// <summary>
+    /// Picker selection including the None sentinel. Prefer this over ActiveLoadout for UI.
+    /// </summary>
+    public LoadoutPickerItem SelectedLoadoutPickerItem
+    {
+        get => _selectedLoadoutPickerItem ?? ResolveSelectedPickerItem();
+        set
+        {
+            // ComboBox clears SelectedItem while ItemsSource rebuilds; restore the
+            // collection instance so the control does not stay blank.
+            if (value == null)
             {
-                _ = SwitchLoadoutWithConfirmAsync(value);
-                OnPropertyChanged(nameof(ActiveLoadout));
+                SyncSelectedPickerItem(forceNotify: true);
                 return;
             }
 
-            CommitActiveLoadout(value, applyChecks: value != null);
+            var requested = value.Loadout;
+            if (ReferenceEquals(_activeLoadout, requested)
+                || (_activeLoadout == null && requested == null))
+            {
+                SyncSelectedPickerItem(forceNotify: true);
+                return;
+            }
+
+            ActiveLoadout = requested;
         }
     }
 
@@ -60,6 +80,11 @@ public partial class MainViewModel
             : IsLoadoutDirty
                 ? $"{ActiveLoadout.Name} *"
                 : ActiveLoadout.Name;
+
+    public string SelectedLoadoutPickerTip =>
+        ActiveLoadout == null
+            ? "No named loadout — checklist unbound"
+            : ActiveLoadout.Name;
 
     public string NewLoadoutName
     {
@@ -85,9 +110,13 @@ public partial class MainViewModel
         IsLoadoutDirty ? "LOADOUTS *" : "LOADOUTS";
 
     public string LoadoutDirtyHint =>
-        IsLoadoutDirty ? "Loadout edited — SAVE to keep, or switch to discard" : string.Empty;
+        IsLoadoutDirty ? "Loadout edited — SAVE to keep changes" : string.Empty;
 
     public bool HasActiveLoadout => ActiveLoadout != null;
+
+    public bool HasSavedLoadouts => AvailableLoadouts.Count > 0;
+
+    public bool HasNoSavedLoadouts => !HasSavedLoadouts;
 
     public bool IsKotor1Target =>
         _detectedGameVersion?.Title == GameTitle.KOTOR1
@@ -166,8 +195,6 @@ public partial class MainViewModel
             () => CanEditPaths && HasActiveLoadout);
         DuplicateLoadoutCommand = new SimpleCommand(DuplicateActiveLoadout,
             () => CanEditPaths && HasActiveLoadout);
-        ClearLoadoutCommand = new SimpleCommand(ClearActiveLoadout,
-            () => CanEditPaths && HasActiveLoadout);
         ExportLoadoutCommand = new SimpleCommand(async () => await ExportLoadoutAsync(), () => CanEditPaths);
         ImportLoadoutCommand = new SimpleCommand(async () => await ImportLoadoutAsync(), () => CanEditPaths);
         SelectKotor1Command = new SimpleCommand(() => SwitchToRememberedTarget(GameTitle.KOTOR1), () => HasKotor1Memory);
@@ -185,6 +212,8 @@ public partial class MainViewModel
                 {
                     _activeLoadout = match;
                     NewLoadoutName = match.Name;
+                    NotifyLoadoutSelectionChanged();
+                    OnPropertyChanged(nameof(HasActiveLoadout));
                 }
                 finally
                 {
@@ -199,7 +228,6 @@ public partial class MainViewModel
     public System.Windows.Input.ICommand SaveLoadoutCommand { get; private set; } = null!;
     public System.Windows.Input.ICommand DeleteLoadoutCommand { get; private set; } = null!;
     public System.Windows.Input.ICommand DuplicateLoadoutCommand { get; private set; } = null!;
-    public System.Windows.Input.ICommand ClearLoadoutCommand { get; private set; } = null!;
     public System.Windows.Input.ICommand ExportLoadoutCommand { get; private set; } = null!;
     public System.Windows.Input.ICommand ImportLoadoutCommand { get; private set; } = null!;
     public System.Windows.Input.ICommand SelectKotor1Command { get; private set; } = null!;
@@ -226,8 +254,7 @@ public partial class MainViewModel
     {
         _settings.ActiveLoadoutId = _activeLoadout?.Id;
         _settings.Save();
-        OnPropertyChanged(nameof(ActiveLoadoutName));
-        OnPropertyChanged(nameof(ActiveLoadoutDisplayName));
+        NotifyLoadoutSelectionChanged();
         OnPropertyChanged(nameof(HasActiveLoadout));
         RaiseLoadoutCommandsCanExecute();
         RecomputeLoadoutDirty();
@@ -246,8 +273,7 @@ public partial class MainViewModel
         if (value != null)
             NewLoadoutName = value.Name;
 
-        OnPropertyChanged(nameof(ActiveLoadoutName));
-        OnPropertyChanged(nameof(ActiveLoadoutDisplayName));
+        NotifyLoadoutSelectionChanged();
         OnPropertyChanged(nameof(HasActiveLoadout));
         RaiseLoadoutCommandsCanExecute();
 
@@ -259,34 +285,6 @@ public partial class MainViewModel
         RememberCurrentTarget();
     }
 
-    private async Task SwitchLoadoutWithConfirmAsync(PatchLoadout? requested)
-    {
-        if (_loadoutSwitchInProgress)
-            return;
-
-        _loadoutSwitchInProgress = true;
-        try
-        {
-            var confirmed = Dialogs == null || await Dialogs.ConfirmAsync(
-                "DISCARD LOADOUT EDITS?",
-                "Current checklist differs from the selected loadout. Switch and discard edits?",
-                "SWITCH",
-                "CANCEL");
-
-            if (!confirmed)
-            {
-                OnPropertyChanged(nameof(ActiveLoadout));
-                return;
-            }
-
-            CommitActiveLoadout(requested, applyChecks: requested != null);
-        }
-        finally
-        {
-            _loadoutSwitchInProgress = false;
-        }
-    }
-
     private void RaiseLoadoutCommandsCanExecute()
     {
         if (SaveLoadoutCommand is SimpleCommand save)
@@ -295,8 +293,6 @@ public partial class MainViewModel
             del.RaiseCanExecuteChanged();
         if (DuplicateLoadoutCommand is SimpleCommand dup)
             dup.RaiseCanExecuteChanged();
-        if (ClearLoadoutCommand is SimpleCommand clr)
-            clr.RaiseCanExecuteChanged();
         if (ExportLoadoutCommand is SimpleCommand exp)
             exp.RaiseCanExecuteChanged();
         if (ImportLoadoutCommand is SimpleCommand imp)
@@ -315,8 +311,13 @@ public partial class MainViewModel
             AvailableLoadouts.Add(loadout);
         }
 
+        RebuildLoadoutPickerItems();
+
         if (previousId == null)
+        {
+            NotifyLoadoutSelectionChanged();
             return;
+        }
 
         var stillVisible = AvailableLoadouts.FirstOrDefault(l => l.Id == previousId);
         if (stillVisible == null && _activeLoadout != null)
@@ -332,6 +333,64 @@ public partial class MainViewModel
                 _suppressLoadoutSelection = false;
             }
         }
+        else
+        {
+            NotifyLoadoutSelectionChanged();
+        }
+    }
+
+    private void RebuildLoadoutPickerItems()
+    {
+        LoadoutPickerItems.Clear();
+        LoadoutPickerItems.Add(LoadoutPickerItem.None);
+        foreach (var loadout in AvailableLoadouts)
+            LoadoutPickerItems.Add(new LoadoutPickerItem(loadout));
+
+        SyncSelectedPickerItem(forceNotify: true);
+
+        OnPropertyChanged(nameof(HasSavedLoadouts));
+        OnPropertyChanged(nameof(HasNoSavedLoadouts));
+    }
+
+    private LoadoutPickerItem ResolveSelectedPickerItem()
+    {
+        if (_activeLoadout == null)
+            return LoadoutPickerItems.Count > 0 ? LoadoutPickerItems[0] : LoadoutPickerItem.None;
+
+        return LoadoutPickerItems.FirstOrDefault(i =>
+                   i.Loadout != null
+                   && string.Equals(i.Loadout.Id, _activeLoadout.Id, StringComparison.Ordinal))
+               ?? (LoadoutPickerItems.Count > 0 ? LoadoutPickerItems[0] : LoadoutPickerItem.None);
+    }
+
+    private void SyncSelectedPickerItem(bool forceNotify = false)
+    {
+        var resolved = ResolveSelectedPickerItem();
+        if (!ReferenceEquals(_selectedLoadoutPickerItem, resolved))
+        {
+            _selectedLoadoutPickerItem = resolved;
+            OnPropertyChanged(nameof(SelectedLoadoutPickerItem));
+            return;
+        }
+
+        if (!forceNotify)
+            return;
+
+        // ComboBox may have blanked SelectedItem while still "bound" to the same
+        // source value; bounce null so Avalonia re-applies the selection.
+        _selectedLoadoutPickerItem = null!;
+        OnPropertyChanged(nameof(SelectedLoadoutPickerItem));
+        _selectedLoadoutPickerItem = resolved;
+        OnPropertyChanged(nameof(SelectedLoadoutPickerItem));
+    }
+
+    private void NotifyLoadoutSelectionChanged()
+    {
+        OnPropertyChanged(nameof(ActiveLoadout));
+        OnPropertyChanged(nameof(ActiveLoadoutName));
+        OnPropertyChanged(nameof(ActiveLoadoutDisplayName));
+        SyncSelectedPickerItem(forceNotify: true);
+        OnPropertyChanged(nameof(SelectedLoadoutPickerTip));
     }
 
     private string CurrentGameKey()
@@ -490,15 +549,6 @@ public partial class MainViewModel
         RefreshLoadoutList();
         CommitActiveLoadout(AvailableLoadouts.FirstOrDefault(l => l.Id == clone.Id) ?? clone, applyChecks: true);
         StatusMessage = $"Duplicated loadout as '{copyName}'";
-    }
-
-    private void ClearActiveLoadout()
-    {
-        if (_activeLoadout == null)
-            return;
-
-        CommitActiveLoadout(null, applyChecks: false);
-        StatusMessage = "Loadout selection cleared";
     }
 
     private async Task ExportLoadoutAsync()
