@@ -107,6 +107,19 @@ public partial class MainViewModel : ViewModelBase
 
     public bool IsFirstRun => !HasValidGamePath;
 
+    public bool HasConfiguredPaths =>
+        HasValidGamePath
+        && !string.IsNullOrWhiteSpace(_patchesPath)
+        && Directory.Exists(_patchesPath);
+
+    public string GamePathDisplay =>
+        HasValidGamePath ? Path.GetFileName(_gamePath) : string.Empty;
+
+    public string PatchesPathDisplay =>
+        !string.IsNullOrWhiteSpace(_patchesPath) && Directory.Exists(_patchesPath)
+            ? Path.GetFileName(_patchesPath.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar))
+            : string.Empty;
+
     public bool CanEditPaths => !IsOperationInProgress;
 
     public bool HasPendingChanges => PendingChangesCount > 0;
@@ -226,6 +239,7 @@ public partial class MainViewModel : ViewModelBase
                 _settings.Save();
                 OnPropertyChanged(nameof(HasValidGamePath));
                 OnPropertyChanged(nameof(IsFirstRun));
+                NotifyConfiguredPathsChanged();
                 RefreshCommandStates();
 
                 InvalidatePatchStateForGamePathChange();
@@ -266,8 +280,17 @@ public partial class MainViewModel : ViewModelBase
                     UpdateSelectAllState();
                     UpdatePendingChanges();
                 }
+
+                NotifyConfiguredPathsChanged();
             }
         }
+    }
+
+    private void NotifyConfiguredPathsChanged()
+    {
+        OnPropertyChanged(nameof(HasConfiguredPaths));
+        OnPropertyChanged(nameof(GamePathDisplay));
+        OnPropertyChanged(nameof(PatchesPathDisplay));
     }
 
     /// <summary>

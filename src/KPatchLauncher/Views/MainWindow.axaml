@@ -141,6 +141,13 @@
                                Margin="16,8,16,0">
                 <controls:HudPanel.HeaderContent>
                     <StackPanel Orientation="Horizontal" Spacing="6">
+                        <Button Content="SETTINGS"
+                                Command="{Binding OpenSettingsCommand}"
+                                MinWidth="88"
+                                MinHeight="28"
+                                Padding="8,4"
+                                IsVisible="{Binding !IsFirstRun}"
+                                ToolTip.Tip="Edit game and patches paths"/>
                         <Button Content="{Binding LoadoutManagerButtonLabel}"
                                 Command="{Binding OpenLoadoutManagerCommand}"
                                 MinWidth="96"
@@ -155,19 +162,65 @@
                                    ToolTip.Tip="{Binding LoadoutDirtyHint}"/>
                     </StackPanel>
                 </controls:HudPanel.HeaderContent>
-                <Grid ColumnDefinitions="*,12,*">
-                    <controls:PathField Label="GAME"
-                                        PathText="{Binding GamePath}"
-                                        Watermark="Path to swkotor.exe"
-                                        BrowseCommand="{Binding BrowseGameCommand}"
-                                        IsBrowseEnabled="{Binding CanEditPaths}"/>
-                    <controls:PathField Grid.Column="2"
-                                        Label="PATCHES"
-                                        PathText="{Binding PatchesPath}"
-                                        Watermark="Directory containing .kpatch files"
-                                        BrowseCommand="{Binding BrowsePatchesCommand}"
-                                        IsBrowseEnabled="{Binding CanEditPaths}"/>
-                </Grid>
+                <Panel>
+                    <Grid IsVisible="{Binding !HasConfiguredPaths}"
+                          ColumnDefinitions="*,12,*">
+                        <controls:PathField Label="GAME"
+                                            PathText="{Binding GamePath}"
+                                            Watermark="Path to swkotor.exe"
+                                            BrowseCommand="{Binding BrowseGameCommand}"
+                                            IsBrowseEnabled="{Binding CanEditPaths}"/>
+                        <controls:PathField Grid.Column="2"
+                                            Label="PATCHES"
+                                            PathText="{Binding PatchesPath}"
+                                            Watermark="Directory containing .kpatch files"
+                                            BrowseCommand="{Binding BrowsePatchesCommand}"
+                                            IsBrowseEnabled="{Binding CanEditPaths}"/>
+                    </Grid>
+                    <Grid IsVisible="{Binding HasConfiguredPaths}"
+                          ColumnDefinitions="*,Auto">
+                        <StackPanel Orientation="Horizontal"
+                                    Spacing="16"
+                                    VerticalAlignment="Center">
+                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                <TextBlock Text="GAME"
+                                           Classes="caption"
+                                           VerticalAlignment="Center"/>
+                                <TextBlock Text="{Binding GamePathDisplay}"
+                                           Classes="mono"
+                                           FontSize="12"
+                                           VerticalAlignment="Center"
+                                           TextTrimming="CharacterEllipsis"
+                                           MaxWidth="220"
+                                           ToolTip.Tip="{Binding GamePath}"/>
+                            </StackPanel>
+                            <TextBlock Text="|"
+                                       Foreground="{DynamicResource CaptionBrush}"
+                                       VerticalAlignment="Center"
+                                       Opacity="0.6"/>
+                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                <TextBlock Text="PATCHES"
+                                           Classes="caption"
+                                           VerticalAlignment="Center"/>
+                                <TextBlock Text="{Binding PatchesPathDisplay}"
+                                           Classes="mono"
+                                           FontSize="12"
+                                           VerticalAlignment="Center"
+                                           TextTrimming="CharacterEllipsis"
+                                           MaxWidth="220"
+                                           ToolTip.Tip="{Binding PatchesPath}"/>
+                            </StackPanel>
+                        </StackPanel>
+                        <Button Grid.Column="1"
+                                Content="EDIT"
+                                Command="{Binding OpenSettingsCommand}"
+                                MinWidth="72"
+                                MinHeight="28"
+                                Padding="8,4"
+                                VerticalAlignment="Center"
+                                ToolTip.Tip="Edit game and patches paths"/>
+                    </Grid>
+                </Panel>
             </controls:HudPanel>
 
             <!-- 3. Body: INITIALIZE or workspace -->

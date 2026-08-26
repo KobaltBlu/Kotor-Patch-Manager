@@ -1,0 +1,50 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:controls="using:KPatchLauncher.Controls"
+        xmlns:vm="using:KPatchLauncher.ViewModels"
+        x:Class="KPatchLauncher.Controls.SettingsWindow"
+        x:DataType="vm:MainViewModel"
+        Title="Settings"
+        Width="560"
+        SizeToContent="Height"
+        CanResize="False"
+        WindowStartupLocation="CenterOwner"
+        SystemDecorations="None"
+        Background="{DynamicResource BackgroundBrush}"
+        Foreground="{DynamicResource TextBrush}"
+        ShowInTaskbar="False">
+    <controls:HudPanel Header="SETTINGS" Margin="0">
+        <DockPanel>
+            <StackPanel DockPanel.Dock="Bottom"
+                        Orientation="Horizontal"
+                        HorizontalAlignment="Right"
+                        Margin="0,16,0,0">
+                <Button Content="CLOSE"
+                        Classes="primary"
+                        MinWidth="110"
+                        Click="OnClose"/>
+            </StackPanel>
+
+            <StackPanel Spacing="0">
+                <StackPanel Classes="hud-section">
+                    <TextBlock Text="PATHS" Classes="section-title"/>
+                    <Border Classes="section-rule"/>
+                    <Border Classes="section-inset">
+                        <StackPanel Spacing="12">
+                            <controls:PathField Label="GAME"
+                                                PathText="{Binding GamePath}"
+                                                Watermark="Path to swkotor.exe"
+                                                BrowseCommand="{Binding BrowseGameCommand}"
+                                                IsBrowseEnabled="{Binding CanEditPaths}"/>
+                            <controls:PathField Label="PATCHES"
+                                                PathText="{Binding PatchesPath}"
+                                                Watermark="Directory containing .kpatch files"
+                                                BrowseCommand="{Binding BrowsePatchesCommand}"
+                                                IsBrowseEnabled="{Binding CanEditPaths}"/>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </StackPanel>
+        </DockPanel>
+    </controls:HudPanel>
+</Window>

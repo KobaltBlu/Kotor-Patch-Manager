@@ -160,6 +160,7 @@ public partial class MainViewModel
         RefreshLoadoutList();
 
         OpenLoadoutManagerCommand = new SimpleCommand(async () => await OpenLoadoutManagerAsync());
+        OpenSettingsCommand = new SimpleCommand(async () => await OpenSettingsAsync());
         SaveLoadoutCommand = new SimpleCommand(SaveCurrentAsLoadout, () => CanEditPaths);
         DeleteLoadoutCommand = new SimpleCommand(async () => await DeleteActiveLoadoutAsync(),
             () => CanEditPaths && HasActiveLoadout);
@@ -194,6 +195,7 @@ public partial class MainViewModel
     }
 
     public System.Windows.Input.ICommand OpenLoadoutManagerCommand { get; private set; } = null!;
+    public System.Windows.Input.ICommand OpenSettingsCommand { get; private set; } = null!;
     public System.Windows.Input.ICommand SaveLoadoutCommand { get; private set; } = null!;
     public System.Windows.Input.ICommand DeleteLoadoutCommand { get; private set; } = null!;
     public System.Windows.Input.ICommand DuplicateLoadoutCommand { get; private set; } = null!;
@@ -210,6 +212,14 @@ public partial class MainViewModel
             return;
 
         await Dialogs.ShowLoadoutManagerAsync(this);
+    }
+
+    private async Task OpenSettingsAsync()
+    {
+        if (Dialogs == null)
+            return;
+
+        await Dialogs.ShowSettingsAsync(this);
     }
 
     private void OnActiveLoadoutMetaChanged()

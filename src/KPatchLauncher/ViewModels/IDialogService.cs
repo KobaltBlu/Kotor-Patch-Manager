@@ -6,4 +6,5 @@ public interface IDialogService
     Task ShowErrorAsync(string title, string message);
     Task ShowAboutAsync();
     Task ShowLoadoutManagerAsync(MainViewModel viewModel);
+    Task ShowSettingsAsync(MainViewModel viewModel);
 }
