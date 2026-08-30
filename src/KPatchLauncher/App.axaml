@@ -7,7 +7,7 @@
     <Application.Resources>
         <ResourceDictionary>
             <FontFamily x:Key="HudDisplayFont">avares://KPatchLauncher/Assets/Fonts/Orbitron.ttf#Orbitron,avares://KPatchLauncher/Assets/Fonts/Audiowide-Regular.ttf#Audiowide</FontFamily>
-            <FontFamily x:Key="HudBodyFont">avares://KPatchLauncher/Assets/Fonts/Rajdhani-Regular.ttf,avares://KPatchLauncher/Assets/Fonts/Rajdhani-SemiBold.ttf,avares://KPatchLauncher/Assets/Fonts/Rajdhani-Bold.ttf#Rajdhani</FontFamily>
+            <FontFamily x:Key="HudBodyFont">avares://KPatchLauncher/Assets/Fonts/IBMPlexSans-Regular.ttf,avares://KPatchLauncher/Assets/Fonts/IBMPlexSans-Medium.ttf,avares://KPatchLauncher/Assets/Fonts/IBMPlexSans-SemiBold.ttf#IBM Plex Sans</FontFamily>
             <FontFamily x:Key="HudMonoFont">avares://KPatchLauncher/Assets/Fonts/ShareTechMono-Regular.ttf#Share Tech Mono</FontFamily>
             <ResourceDictionary.MergedDictionaries>
                 <ResourceInclude Source="avares://KPatchLauncher/Themes/HudScrollBar.axaml"/>

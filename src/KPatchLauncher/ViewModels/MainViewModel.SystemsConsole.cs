@@ -214,6 +214,8 @@ public partial class MainViewModel
         ImportLoadoutCommand = new SimpleCommand(async () => await ImportLoadoutAsync(), () => CanEditPaths);
         SelectKotor1Command = new SimpleCommand(() => SwitchToRememberedTarget(GameTitle.KOTOR1), () => HasKotor1Memory);
         SelectKotor2Command = new SimpleCommand(() => SwitchToRememberedTarget(GameTitle.KOTOR2), () => HasKotor2Memory);
+        SelectSettingsKotor1Command = new SimpleCommand(() => SettingsGameScope = GameTitle.KOTOR1);
+        SelectSettingsKotor2Command = new SimpleCommand(() => SettingsGameScope = GameTitle.KOTOR2);
         RepairStagingCommand = new SimpleCommand(async () => await ApplyPatches(skipEmptyConfirm: true),
             () => CanEditPaths && HasValidGamePath);
 
@@ -247,6 +249,8 @@ public partial class MainViewModel
     public System.Windows.Input.ICommand ImportLoadoutCommand { get; private set; } = null!;
     public System.Windows.Input.ICommand SelectKotor1Command { get; private set; } = null!;
     public System.Windows.Input.ICommand SelectKotor2Command { get; private set; } = null!;
+    public System.Windows.Input.ICommand SelectSettingsKotor1Command { get; private set; } = null!;
+    public System.Windows.Input.ICommand SelectSettingsKotor2Command { get; private set; } = null!;
     public System.Windows.Input.ICommand RepairStagingCommand { get; private set; } = null!;
 
     private async Task OpenLoadoutManagerAsync()
@@ -262,6 +266,7 @@ public partial class MainViewModel
         if (Dialogs == null)
             return;
 
+        SettingsGameScope = ResolveThemeGameSlot();
         await Dialogs.ShowSettingsAsync(this);
     }
 
@@ -832,6 +837,11 @@ public partial class MainViewModel
             k2.RaiseCanExecuteChanged();
         OnPropertyChanged(nameof(IsKotor1Target));
         OnPropertyChanged(nameof(IsKotor2Target));
+        if (IsSettingsScopeActiveTarget)
+        {
+            OnPropertyChanged(nameof(SettingsGamePath));
+            OnPropertyChanged(nameof(SettingsPatchesPath));
+        }
     }
 
     private void SwitchToRememberedTarget(GameTitle title)

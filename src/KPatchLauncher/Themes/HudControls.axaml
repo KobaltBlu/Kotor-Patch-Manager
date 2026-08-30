@@ -48,7 +48,7 @@
                                 <StackPanel Spacing="2" VerticalAlignment="Center">
                                     <TextBlock Text="{TemplateBinding Header}"
                                                Classes="display"
-                                               FontSize="12"
+                                               FontSize="15"
                                                Foreground="{DynamicResource AccentBrush}"/>
                                     <TextBlock Text="{TemplateBinding Subtitle}"
                                                Classes="mono"
@@ -73,7 +73,7 @@
 
     <Style Selector="Window">
         <Setter Property="FontFamily" Value="{StaticResource HudBodyFont}"/>
-        <Setter Property="FontSize" Value="14"/>
+        <Setter Property="FontSize" Value="15"/>
         <Setter Property="Background" Value="{DynamicResource BackgroundBrush}"/>
         <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
     </Style>
@@ -90,9 +90,10 @@
 
     <Style Selector="TextBlock.caption">
         <Setter Property="Foreground" Value="{DynamicResource CaptionBrush}"/>
-        <Setter Property="FontFamily" Value="{StaticResource HudDisplayFont}"/>
-        <Setter Property="FontSize" Value="11"/>
-        <Setter Property="LetterSpacing" Value="1.5"/>
+        <Setter Property="FontFamily" Value="{StaticResource HudBodyFont}"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
+        <Setter Property="FontSize" Value="12"/>
+        <Setter Property="LetterSpacing" Value="0.8"/>
     </Style>
 
     <Style Selector="TextBox">
@@ -134,8 +135,9 @@
         <Setter Property="HorizontalContentAlignment" Value="Center"/>
         <Setter Property="VerticalContentAlignment" Value="Center"/>
         <Setter Property="Padding" Value="12,6"/>
-        <Setter Property="FontFamily" Value="{StaticResource HudDisplayFont}"/>
-        <Setter Property="FontSize" Value="12"/>
+        <Setter Property="FontFamily" Value="{StaticResource HudBodyFont}"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
+        <Setter Property="FontSize" Value="13"/>
         <Setter Property="Cursor" Value="Hand"/>
         <Setter Property="MinHeight" Value="32"/>
     </Style>
@@ -304,7 +306,7 @@
         <Setter Property="Padding" Value="0"/>
     </Style>
     <Style Selector="Grid.muted">
-        <Setter Property="Opacity" Value="0.45"/>
+        <Setter Property="Opacity" Value="0.72"/>
     </Style>
 
     <Style Selector="ListBoxItem">
@@ -370,9 +372,10 @@
         <Setter Property="VerticalAlignment" Value="Center"/>
     </Style>
     <Style Selector="Border.badge TextBlock">
-        <Setter Property="FontFamily" Value="{StaticResource HudDisplayFont}"/>
-        <Setter Property="FontSize" Value="9"/>
-        <Setter Property="LetterSpacing" Value="1"/>
+        <Setter Property="FontFamily" Value="{StaticResource HudBodyFont}"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
+        <Setter Property="FontSize" Value="11"/>
+        <Setter Property="LetterSpacing" Value="0.8"/>
         <Setter Property="Foreground" Value="{DynamicResource PrimaryBrush}"/>
     </Style>
     <Style Selector="Border.badge-on">
@@ -421,8 +424,9 @@
     </Style>
     <Style Selector="StackPanel.hud-section > TextBlock.section-title">
         <Setter Property="FontFamily" Value="{StaticResource HudDisplayFont}"/>
-        <Setter Property="FontSize" Value="10"/>
-        <Setter Property="LetterSpacing" Value="1.5"/>
+        <Setter Property="FontWeight" Value="Bold"/>
+        <Setter Property="FontSize" Value="13"/>
+        <Setter Property="LetterSpacing" Value="2"/>
         <Setter Property="Foreground" Value="{DynamicResource CaptionBrush}"/>
         <Setter Property="Margin" Value="0,0,0,2"/>
     </Style>

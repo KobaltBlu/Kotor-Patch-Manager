@@ -67,7 +67,7 @@
                             VerticalAlignment="Center">
                     <TextBlock Text="KOTOR PATCH MANAGER"
                                Classes="display"
-                               FontSize="13"
+                               FontSize="15"
                                Foreground="{DynamicResource AccentBrush}"
                                VerticalAlignment="Center"/>
                 </StackPanel>

@@ -49,8 +49,8 @@ public partial class MainViewModel : ViewModelBase
     private readonly List<string> _preferredInstallOrder = new();
     private bool _isWorkspaceNarrow;
     private LibrarySortOption? _selectedLibrarySortOption;
-    private UiThemeOption? _selectedKotor1UiThemeOption;
-    private UiThemeOption? _selectedKotor2UiThemeOption;
+    private UiThemeOption? _selectedSettingsUiThemeOption;
+    private GameTitle _settingsGameScope = GameTitle.KOTOR1;
     private bool _isUpdatingUiThemeSelection;
 
     public MainViewModel()
@@ -88,9 +88,12 @@ public partial class MainViewModel : ViewModelBase
         ImportUiThemeCommand = new SimpleCommand(async () => await ImportUiThemeAsync());
         ExportUiThemeCommand = new SimpleCommand(async () => await ExportUiThemeAsync());
         OpenUiThemesFolderCommand = new SimpleCommand(OpenUiThemesFolder);
+        BrowseSettingsGameCommand = new SimpleCommand(async () => await BrowseSettingsGameAsync(), () => CanEditPaths);
+        BrowseSettingsPatchesCommand = new SimpleCommand(async () => await BrowseSettingsPatchesAsync(), () => CanEditPaths);
 
         InitSystemsConsole();
         InitLibrarySortOptions();
+        _settingsGameScope = ResolveThemeGameSlot();
         RebuildUiThemeOptions();
 
         // Load patches if path is set
@@ -176,39 +179,95 @@ public partial class MainViewModel : ViewModelBase
     /// </summary>
     public string UiThemeId => GetUiThemeIdForGame(_detectedGameVersion?.Title ?? GuessTitleFromPath(GamePath));
 
-    public UiThemeOption? SelectedKotor1UiThemeOption
+    /// <summary>
+    /// Which game's settings the Settings modal is editing (defaults to the active target).
+    /// </summary>
+    public GameTitle SettingsGameScope
     {
-        get => _selectedKotor1UiThemeOption;
+        get => _settingsGameScope;
         set
         {
-            if (_isUpdatingUiThemeSelection)
-            {
-                SetProperty(ref _selectedKotor1UiThemeOption, value);
-                return;
-            }
-
-            if (!SetProperty(ref _selectedKotor1UiThemeOption, value) || value == null)
+            var normalized = value == GameTitle.KOTOR2 ? GameTitle.KOTOR2 : GameTitle.KOTOR1;
+            if (!SetProperty(ref _settingsGameScope, normalized))
                 return;
 
-            ApplyAndPersistUiTheme(value.Id, GameTitle.KOTOR1);
+            OnPropertyChanged(nameof(IsSettingsScopeKotor1));
+            OnPropertyChanged(nameof(IsSettingsScopeKotor2));
+            OnPropertyChanged(nameof(SettingsGamePath));
+            OnPropertyChanged(nameof(SettingsPatchesPath));
+            OnPropertyChanged(nameof(SettingsGamePathWatermark));
+            RebuildUiThemeOptions();
         }
     }
 
-    public UiThemeOption? SelectedKotor2UiThemeOption
+    public bool IsSettingsScopeKotor1 => SettingsGameScope == GameTitle.KOTOR1;
+
+    public bool IsSettingsScopeKotor2 => SettingsGameScope == GameTitle.KOTOR2;
+
+    public string SettingsGamePathWatermark =>
+        SettingsGameScope == GameTitle.KOTOR2
+            ? "Path to swkotor2.exe"
+            : "Path to swkotor.exe";
+
+    /// <summary>
+    /// Game path for the Settings tab scope (live paths when that game is active, else memory).
+    /// </summary>
+    public string SettingsGamePath
     {
-        get => _selectedKotor2UiThemeOption;
+        get => IsSettingsScopeActiveTarget
+            ? GamePath
+            : GetTargetMemory(SettingsGameScope)?.GamePath ?? string.Empty;
+        set
+        {
+            if (IsSettingsScopeActiveTarget)
+            {
+                GamePath = value;
+                OnPropertyChanged(nameof(SettingsGamePath));
+                return;
+            }
+
+            SetInactiveTargetPaths(SettingsGameScope, gamePath: value);
+            OnPropertyChanged(nameof(SettingsGamePath));
+        }
+    }
+
+    /// <summary>
+    /// Patches path for the Settings tab scope (live paths when that game is active, else memory).
+    /// </summary>
+    public string SettingsPatchesPath
+    {
+        get => IsSettingsScopeActiveTarget
+            ? PatchesPath
+            : GetTargetMemory(SettingsGameScope)?.PatchesPath ?? string.Empty;
+        set
+        {
+            if (IsSettingsScopeActiveTarget)
+            {
+                PatchesPath = value;
+                OnPropertyChanged(nameof(SettingsPatchesPath));
+                return;
+            }
+
+            SetInactiveTargetPaths(SettingsGameScope, patchesPath: value);
+            OnPropertyChanged(nameof(SettingsPatchesPath));
+        }
+    }
+
+    public UiThemeOption? SelectedSettingsUiThemeOption
+    {
+        get => _selectedSettingsUiThemeOption;
         set
         {
             if (_isUpdatingUiThemeSelection)
             {
-                SetProperty(ref _selectedKotor2UiThemeOption, value);
+                SetProperty(ref _selectedSettingsUiThemeOption, value);
                 return;
             }
 
-            if (!SetProperty(ref _selectedKotor2UiThemeOption, value) || value == null)
+            if (!SetProperty(ref _selectedSettingsUiThemeOption, value) || value == null)
                 return;
 
-            ApplyAndPersistUiTheme(value.Id, GameTitle.KOTOR2);
+            ApplyAndPersistUiTheme(value.Id, SettingsGameScope);
         }
     }
 
@@ -379,6 +438,11 @@ public partial class MainViewModel : ViewModelBase
         OnPropertyChanged(nameof(HasConfiguredPaths));
         OnPropertyChanged(nameof(GamePathDisplay));
         OnPropertyChanged(nameof(PatchesPathDisplay));
+        if (IsSettingsScopeActiveTarget)
+        {
+            OnPropertyChanged(nameof(SettingsGamePath));
+            OnPropertyChanged(nameof(SettingsPatchesPath));
+        }
     }
 
     /// <summary>
@@ -477,6 +541,8 @@ public partial class MainViewModel : ViewModelBase
     public ICommand ImportUiThemeCommand { get; }
     public ICommand ExportUiThemeCommand { get; }
     public ICommand OpenUiThemesFolderCommand { get; }
+    public ICommand BrowseSettingsGameCommand { get; }
+    public ICommand BrowseSettingsPatchesCommand { get; }
 
     /// <summary>
     /// Updates narrow/wide workspace flag from the main window width (no side effects).
@@ -500,26 +566,34 @@ public partial class MainViewModel : ViewModelBase
         _librarySortMode = _selectedLibrarySortOption.Id;
     }
 
-    private void RebuildUiThemeOptions(string? preferredIdForCurrentGame = null)
+    private void RebuildUiThemeOptions(string? preferredIdForScope = null)
     {
-        var k1Id = NormalizeStoredThemeId(_settings.Kotor1UiThemeId);
-        var k2Id = NormalizeStoredThemeId(_settings.Kotor2UiThemeId);
+        var slot = SettingsGameScope;
+        var themeId = preferredIdForScope ?? GetUiThemeIdForGame(slot);
+        themeId = EnsureThemeAvailableOrAuto(themeId, slot);
+        themeId = CoerceThemeIdForGameSlot(themeId, slot);
 
-        if (preferredIdForCurrentGame != null)
+        if (!string.Equals(GetUiThemeIdForGame(slot), themeId, StringComparison.OrdinalIgnoreCase))
         {
-            if (ResolveThemeGameSlot() == GameTitle.KOTOR2)
-                k2Id = preferredIdForCurrentGame;
+            if (slot == GameTitle.KOTOR2)
+                _settings.Kotor2UiThemeId = themeId;
             else
-                k1Id = preferredIdForCurrentGame;
+                _settings.Kotor1UiThemeId = themeId;
+            _settings.Save();
         }
 
-        k1Id = EnsureThemeAvailableOrAuto(k1Id, GameTitle.KOTOR1);
-        k2Id = EnsureThemeAvailableOrAuto(k2Id, GameTitle.KOTOR2);
-
         UiThemeOptions.Clear();
-        UiThemeOptions.Add(new UiThemeOption(AppThemeVariants.AutoId, "Auto (match game)"));
-        UiThemeOptions.Add(new UiThemeOption(AppThemeVariants.Kotor1Id, "KotOR 1"));
-        UiThemeOptions.Add(new UiThemeOption(AppThemeVariants.Kotor2Id, "KotOR 2"));
+        UiThemeOptions.Add(new UiThemeOption(
+            AppThemeVariants.AutoId,
+            slot == GameTitle.KOTOR2
+                ? "Auto (KotOR 2 palette)"
+                : "Auto (KotOR 1 palette)"));
+
+        if (slot == GameTitle.KOTOR2)
+            UiThemeOptions.Add(new UiThemeOption(AppThemeVariants.Kotor2Id, "KotOR 2"));
+        else
+            UiThemeOptions.Add(new UiThemeOption(AppThemeVariants.Kotor1Id, "KotOR 1"));
+
         UiThemeOptions.Add(new UiThemeOption(AppThemeVariants.NeutralId, "Neutral"));
         UiThemeOptions.Add(new UiThemeOption(AppThemeVariants.DarkId, "Dark"));
         UiThemeOptions.Add(new UiThemeOption(AppThemeVariants.LightId, "Light"));
@@ -535,18 +609,14 @@ public partial class MainViewModel : ViewModelBase
                 $"User · {theme.DisplayName}"));
         }
 
-        var k1Match = UiThemeOptions.FirstOrDefault(o =>
-                          string.Equals(o.Id, k1Id, StringComparison.OrdinalIgnoreCase))
-                      ?? UiThemeOptions[0];
-        var k2Match = UiThemeOptions.FirstOrDefault(o =>
-                          string.Equals(o.Id, k2Id, StringComparison.OrdinalIgnoreCase))
-                      ?? UiThemeOptions[0];
+        var match = UiThemeOptions.FirstOrDefault(o =>
+                        string.Equals(o.Id, themeId, StringComparison.OrdinalIgnoreCase))
+                    ?? UiThemeOptions[0];
 
         _isUpdatingUiThemeSelection = true;
         try
         {
-            SelectedKotor1UiThemeOption = k1Match;
-            SelectedKotor2UiThemeOption = k2Match;
+            SelectedSettingsUiThemeOption = match;
         }
         finally
         {
@@ -568,6 +638,53 @@ public partial class MainViewModel : ViewModelBase
         return title == GameTitle.KOTOR2 ? GameTitle.KOTOR2 : GameTitle.KOTOR1;
     }
 
+    private bool IsSettingsScopeActiveTarget =>
+        SettingsGameScope == GameTitle.KOTOR2
+            ? IsKotor2Target
+            : !IsKotor2Target;
+
+    private GameTargetMemory? GetTargetMemory(GameTitle title) =>
+        title == GameTitle.KOTOR2 ? _settings.Kotor2Target : _settings.Kotor1Target;
+
+    private void SetInactiveTargetPaths(GameTitle title, string? gamePath = null, string? patchesPath = null)
+    {
+        var memory = GetTargetMemory(title) ?? new GameTargetMemory();
+        if (gamePath != null)
+            memory.GamePath = gamePath;
+        if (patchesPath != null)
+            memory.PatchesPath = patchesPath;
+
+        if (title == GameTitle.KOTOR2)
+            _settings.Kotor2Target = memory;
+        else
+            _settings.Kotor1Target = memory;
+
+        _settings.Save();
+        OnPropertyChanged(nameof(HasKotor1Memory));
+        OnPropertyChanged(nameof(HasKotor2Memory));
+        if (SelectKotor1Command is SimpleCommand k1)
+            k1.RaiseCanExecuteChanged();
+        if (SelectKotor2Command is SimpleCommand k2)
+            k2.RaiseCanExecuteChanged();
+    }
+
+    private static string CoerceThemeIdForGameSlot(string themeId, GameTitle slot)
+    {
+        if (slot == GameTitle.KOTOR1
+            && string.Equals(themeId, AppThemeVariants.Kotor2Id, StringComparison.OrdinalIgnoreCase))
+        {
+            return AppThemeVariants.AutoId;
+        }
+
+        if (slot == GameTitle.KOTOR2
+            && string.Equals(themeId, AppThemeVariants.Kotor1Id, StringComparison.OrdinalIgnoreCase))
+        {
+            return AppThemeVariants.AutoId;
+        }
+
+        return themeId;
+    }
+
     private string EnsureThemeAvailableOrAuto(string themeId, GameTitle slot)
     {
         if (AppThemeVariants.TryGetUserSlug(themeId) is not { } slug
@@ -586,6 +703,8 @@ public partial class MainViewModel : ViewModelBase
 
     private void ApplyAndPersistUiTheme(string themeId, GameTitle slot)
     {
+        themeId = CoerceThemeIdForGameSlot(themeId, slot);
+
         if (AppThemeVariants.TryGetUserSlug(themeId) is { } slug
             && UserThemeStore.FindUserThemePath(slug) == null)
         {
@@ -611,6 +730,87 @@ public partial class MainViewModel : ViewModelBase
         var themeId = GetUiThemeIdForGame(title);
         if (Application.Current is App app)
             app.ApplyUiTheme(themeId, title);
+    }
+
+    private async Task BrowseSettingsGameAsync()
+    {
+        try
+        {
+            var window = GetMainWindow();
+            if (window == null)
+            {
+                StatusMessage = "Error: Could not access window";
+                return;
+            }
+
+            var startDir = IsSettingsScopeActiveTarget
+                ? GetGameBrowseStartDirectory()
+                : GetDirectoryForExistingFile(SettingsGamePath) ?? GetGameBrowseStartDirectory();
+
+            var result = await window.StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
+            {
+                Title = SettingsGameScope == GameTitle.KOTOR2
+                    ? "Select KotOR 2 Executable"
+                    : "Select KotOR 1 Executable",
+                AllowMultiple = false,
+                SuggestedStartLocation = await TryGetSuggestedStartFolderAsync(window, startDir),
+                FileTypeFilter = new[]
+                {
+                    new FilePickerFileType("Game Executables")
+                    {
+                        Patterns = new[] { "*.exe", "KOTOR2" }
+                    },
+                    new FilePickerFileType("All Files")
+                    {
+                        Patterns = new[] { "*" }
+                    }
+                }
+            });
+
+            if (result.Count == 0)
+                return;
+
+            SettingsGamePath = result[0].Path.LocalPath;
+            StatusMessage = $"Selected game: {Path.GetFileName(SettingsGamePath)}";
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"Error browsing: {ex.Message}";
+        }
+    }
+
+    private async Task BrowseSettingsPatchesAsync()
+    {
+        try
+        {
+            var window = GetMainWindow();
+            if (window == null)
+            {
+                StatusMessage = "Error: Could not access window";
+                return;
+            }
+
+            var startDir = IsSettingsScopeActiveTarget
+                ? GetPatchesBrowseStartDirectory()
+                : GetExistingDirectory(SettingsPatchesPath) ?? GetPatchesBrowseStartDirectory();
+
+            var result = await window.StorageProvider.OpenFolderPickerAsync(new FolderPickerOpenOptions
+            {
+                Title = "Select Patches Directory",
+                AllowMultiple = false,
+                SuggestedStartLocation = await TryGetSuggestedStartFolderAsync(window, startDir)
+            });
+
+            if (result.Count == 0)
+                return;
+
+            SettingsPatchesPath = result[0].Path.LocalPath;
+            StatusMessage = $"Selected patches directory: {Path.GetFileName(SettingsPatchesPath)}";
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"Error browsing: {ex.Message}";
+        }
     }
 
     private async Task ImportUiThemeAsync()
@@ -662,7 +862,7 @@ public partial class MainViewModel : ViewModelBase
             }
 
             var themeId = AppThemeVariants.ToUserThemeId(info.Slug);
-            var slot = ResolveThemeGameSlot();
+            var slot = SettingsGameScope;
             RebuildUiThemeOptions(themeId);
             ApplyAndPersistUiTheme(themeId, slot);
             StatusMessage = $"Imported theme '{info.DisplayName}'";
@@ -1603,6 +1803,8 @@ public partial class MainViewModel : ViewModelBase
     {
         ((SimpleCommand)BrowseGameCommand).RaiseCanExecuteChanged();
         ((SimpleCommand)BrowsePatchesCommand).RaiseCanExecuteChanged();
+        ((SimpleCommand)BrowseSettingsGameCommand).RaiseCanExecuteChanged();
+        ((SimpleCommand)BrowseSettingsPatchesCommand).RaiseCanExecuteChanged();
         ((SimpleCommand)AddPatchCommand).RaiseCanExecuteChanged();
         ((SimpleCommand)RefreshCommand).RaiseCanExecuteChanged();
         ((SimpleCommand)ApplyPatchesCommand).RaiseCanExecuteChanged();
