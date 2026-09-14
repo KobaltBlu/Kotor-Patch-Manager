@@ -100,6 +100,17 @@ A patch typically contains 3 parts:
 - `conflicts`: List of patches (by `id`) that conflict with this patch's functionality
 - `supported_versions`: key/value pair of game versions and their SHA-256s
 
+### Patch documentation (Markdown)
+
+The launcher renders patch details using **GitHub Flavored Markdown**. Authors can either:
+
+1. Put markdown in the multiline `description` field in `manifest.toml`, or
+2. Ship a `README.md` in the patch directory (preferred for longer docs). When packaged, `README.md` is shown instead of `description`.
+
+Relative images are supported when bundled in the `.kpatch` archive (e.g. `![Preview](docs/preview.png)` with a `docs/` folder). Remote image URLs are not loaded. `description` remains required in the manifest as a short fallback summary.
+
+When building a patch, `create-patch.bat` / `create-patch.py` automatically include `README.md` and `docs/**` when present.
+
 ### Hooks
 There are 4 different types of hooks currently, `simple`, `replace`, `detour`, and `static`. Though they all share certain fields.
 

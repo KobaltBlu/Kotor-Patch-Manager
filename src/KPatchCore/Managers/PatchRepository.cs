@@ -1,4 +1,5 @@
 using System.IO.Compression;
+using KPatchCore.Common;
 using KPatchCore.Models;
 using KPatchCore.Parsers;
 
@@ -41,7 +42,14 @@ public class PatchRepository
         /// True when the .kpatch archive contains an additional/ folder.
         /// </summary>
         public bool HasAdditionalFiles { get; init; }
+
+        /// <summary>
+        /// True when the .kpatch archive contains README.md.
+        /// </summary>
+        public bool HasReadme { get; init; }
     }
+
+    private const string ReadmeEntryName = "README.md";
 
     /// <summary>
     /// Creates a new patch repository
@@ -145,6 +153,9 @@ public class PatchRepository
                 e.FullName.StartsWith("additional/", StringComparison.OrdinalIgnoreCase) ||
                 e.FullName.StartsWith("additional\\", StringComparison.OrdinalIgnoreCase));
 
+            var hasReadme = archive.Entries.Any(e =>
+                string.Equals(e.Name, ReadmeEntryName, StringComparison.OrdinalIgnoreCase));
+
             if (hooksEntries.Count == 0)
             {
                 // No hooks files - could be DLL-only patch
@@ -154,7 +165,8 @@ public class PatchRepository
                     KPatchPath = kpatchPath,
                     Hooks = new List<Hook>(), // Empty hooks list
                     IsLoaded = false,
-                    HasAdditionalFiles = hasAdditionalFiles
+                    HasAdditionalFiles = hasAdditionalFiles,
+                    HasReadme = hasReadme
                 };
 
                 return PatchResult<PatchEntry>.Ok(patchEntry, $"Loaded patch: {manifest.Id} (no hooks)");
@@ -207,7 +219,8 @@ public class PatchRepository
                 KPatchPath = kpatchPath,
                 Hooks = hooks,
                 IsLoaded = false,
-                HasAdditionalFiles = hasAdditionalFiles
+                HasAdditionalFiles = hasAdditionalFiles,
+                HasReadme = hasReadme
             };
 
             return PatchResult<PatchEntry>.Ok(entry, $"Loaded patch: {manifest.Id}");
@@ -415,5 +428,80 @@ public class PatchRepository
         {
             return PatchResult<List<Hook>>.Fail($"Failed to load hooks for version: {ex.Message}");
         }
+    }
+
+    /// <summary>
+    /// Reads README.md from a patch archive when present.
+    /// </summary>
+    public string? TryReadReadme(string patchId) =>
+        TryReadTextEntry(patchId, ReadmeEntryName);
+
+    /// <summary>
+    /// Reads a text file from a patch archive by entry name (e.g. README.md).
+    /// </summary>
+    public string? TryReadTextEntry(string patchId, string entryName)
+    {
+        var patchResult = GetPatch(patchId);
+        if (!patchResult.Success || patchResult.Data == null)
+            return null;
+
+        try
+        {
+            using var archive = ZipFile.OpenRead(patchResult.Data.KPatchPath);
+            var entry = FindArchiveEntry(archive, entryName);
+            if (entry == null)
+                return null;
+
+            using var stream = entry.Open();
+            using var reader = new StreamReader(stream);
+            return reader.ReadToEnd();
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Opens a relative path inside a patch archive (e.g. docs/preview.png).
+    /// Caller owns the returned stream.
+    /// </summary>
+    public Stream? TryOpenEntryStream(string patchId, string relativePath)
+    {
+        if (!PatchArchivePaths.TryNormalize(relativePath, out var normalized))
+            return null;
+
+        var patchResult = GetPatch(patchId);
+        if (!patchResult.Success || patchResult.Data == null)
+            return null;
+
+        try
+        {
+            using var archive = ZipFile.OpenRead(patchResult.Data.KPatchPath);
+            var entry = FindArchiveEntry(archive, normalized);
+            if (entry == null)
+                return null;
+
+            using var source = entry.Open();
+            var buffer = new MemoryStream();
+            source.CopyTo(buffer);
+            buffer.Position = 0;
+            return buffer;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    private static ZipArchiveEntry? FindArchiveEntry(ZipArchive archive, string path)
+    {
+        var normalized = path.Replace('\\', '/');
+        var entry = archive.GetEntry(normalized);
+        if (entry != null)
+            return entry;
+
+        return archive.Entries.FirstOrDefault(e =>
+            string.Equals(e.FullName.Replace('\\', '/'), normalized, StringComparison.OrdinalIgnoreCase));
     }
 }

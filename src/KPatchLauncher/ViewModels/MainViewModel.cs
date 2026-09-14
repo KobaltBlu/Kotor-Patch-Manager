@@ -1636,6 +1636,7 @@ public partial class MainViewModel : ViewModelBase
                 Version = "?",
                 Author = "Unknown",
                 Description = "This patch is installed but not found in patches directory",
+                MarkdownBody = "This patch is installed but not found in patches directory",
                 IsOrphaned = true,
                 IsChecked = true,
                 IsCompatible = false,
@@ -2117,13 +2118,20 @@ public partial class MainViewModel : ViewModelBase
 
                 var patchViewModels = allPatches.Values.Select(entry =>
                 {
+                    var patchId = entry.Manifest.Id;
+                    var markdownBody = entry.HasReadme
+                        ? repository.TryReadReadme(patchId) ?? entry.Manifest.Description
+                        : entry.Manifest.Description;
+
                     var vm = new PatchItemViewModel
                     {
-                        Id = entry.Manifest.Id,
+                        Id = patchId,
                         Name = entry.Manifest.Name,
                         Version = entry.Manifest.Version,
                         Author = entry.Manifest.Author,
                         Description = entry.Manifest.Description,
+                        MarkdownBody = markdownBody,
+                        OpenAsset = path => repository.TryOpenEntryStream(patchId, path),
                         Requires = entry.Manifest.Requires.ToList(),
                         Conflicts = entry.Manifest.Conflicts.ToList(),
                         SupportedVersions = entry.Manifest.SupportedVersions.Keys.ToList(),

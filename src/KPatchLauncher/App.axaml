@@ -64,5 +64,6 @@
     <Application.Styles>
         <FluentTheme />
         <StyleInclude Source="avares://KPatchLauncher/Themes/HudControls.axaml"/>
+        <StyleInclude Source="avares://KPatchLauncher/Themes/PatchMarkdown.axaml"/>
     </Application.Styles>
 </Application>

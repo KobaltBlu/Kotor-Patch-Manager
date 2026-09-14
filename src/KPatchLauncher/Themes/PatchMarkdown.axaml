@@ -1,0 +1,65 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <Style Selector="Border.md-code-block">
+        <Setter Property="Background" Value="{DynamicResource PanelFillBrush}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource BorderLineBrush}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="CornerRadius" Value="2"/>
+    </Style>
+
+    <Style Selector="Border.md-blockquote">
+        <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}"/>
+        <Setter Property="BorderThickness" Value="4,0,0,0"/>
+        <Setter Property="Opacity" Value="0.9"/>
+    </Style>
+
+    <Style Selector="Border.md-rule">
+        <Setter Property="Background" Value="{DynamicResource BorderLineBrush}"/>
+        <Setter Property="Opacity" Value="0.6"/>
+    </Style>
+
+    <Style Selector="Border.md-table">
+        <Setter Property="BorderBrush" Value="{DynamicResource BorderLineBrush}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+    </Style>
+
+    <Style Selector="Border.md-table-cell">
+        <Setter Property="BorderBrush" Value="{DynamicResource BorderLineBrush}"/>
+        <Setter Property="BorderThickness" Value="0,0,1,1"/>
+    </Style>
+
+    <Style Selector="Border.md-table-header">
+        <Setter Property="Background" Value="{DynamicResource PanelFillBrush}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource BorderLineBrush}"/>
+        <Setter Property="BorderThickness" Value="0,0,1,1"/>
+    </Style>
+
+    <Style Selector="Border.md-alert">
+        <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="Background" Value="{DynamicResource PanelFillBrush}"/>
+        <Setter Property="Margin" Value="0,4"/>
+    </Style>
+
+    <Style Selector="Border.md-alert-note">
+        <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}"/>
+    </Style>
+
+    <Style Selector="Border.md-alert-warning">
+        <Setter Property="BorderBrush" Value="{DynamicResource WarningBrush}"/>
+    </Style>
+
+    <Style Selector="Border.md-alert-important">
+        <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}"/>
+    </Style>
+
+    <Style Selector="Border.md-alert-tip">
+        <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}"/>
+    </Style>
+
+    <Style Selector="Border.md-alert-caution">
+        <Setter Property="BorderBrush" Value="{DynamicResource WarningBrush}"/>
+    </Style>
+
+</Styles>

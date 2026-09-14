@@ -57,6 +57,16 @@ public class PatchItemViewModel : ViewModelBase
         set => SetProperty(ref _description, value);
     }
 
+    private string _markdownBody = string.Empty;
+
+    public string MarkdownBody
+    {
+        get => _markdownBody;
+        set => SetProperty(ref _markdownBody, value);
+    }
+
+    public Func<string, Stream?>? OpenAsset { get; init; }
+
     public bool IsChecked
     {
         get => _isChecked;

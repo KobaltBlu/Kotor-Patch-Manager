@@ -1,6 +1,7 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:KPatchLauncher.ViewModels"
+             xmlns:controls="using:KPatchLauncher.Controls"
              x:Class="KPatchLauncher.Controls.PatchDetailsView"
              x:DataType="vm:MainViewModel">
     <Grid>
@@ -39,7 +40,9 @@
                             </Grid>
                             <StackPanel>
                                 <TextBlock Text="DESCRIPTION" Classes="caption"/>
-                                <TextBlock Text="{Binding SelectedPatch.Description}" TextWrapping="Wrap"/>
+                                <controls:PatchMarkdownViewer x:Name="MarkdownViewer"
+                                                                Markdown="{Binding SelectedPatch.MarkdownBody}"
+                                                                OpenLinkCommand="{Binding OpenUrlCommand}"/>
                             </StackPanel>
                             <StackPanel IsVisible="{Binding SelectedPatch.HasLicense}">
                                 <TextBlock Text="LICENSE" Classes="caption"/>
