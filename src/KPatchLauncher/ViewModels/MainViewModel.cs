@@ -50,8 +50,10 @@ public partial class MainViewModel : ViewModelBase
     private bool _isWorkspaceNarrow;
     private LibrarySortOption? _selectedLibrarySortOption;
     private UiThemeOption? _selectedSettingsUiThemeOption;
+    private HudCornerChromeOption? _selectedHudCornerChromeOption;
     private GameTitle _settingsGameScope = GameTitle.KOTOR1;
     private bool _isUpdatingUiThemeSelection;
+    private bool _isUpdatingHudCornerChromeSelection;
 
     public MainViewModel()
     {
@@ -93,6 +95,7 @@ public partial class MainViewModel : ViewModelBase
 
         InitSystemsConsole();
         InitLibrarySortOptions();
+        InitHudCornerChromeOptions();
         _settingsGameScope = ResolveThemeGameSlot();
         RebuildUiThemeOptions();
 
@@ -174,10 +177,18 @@ public partial class MainViewModel : ViewModelBase
 
     public ObservableCollection<UiThemeOption> UiThemeOptions { get; } = new();
 
+    public ObservableCollection<HudCornerChromeOption> HudCornerChromeOptions { get; } = new();
+
     /// <summary>
     /// Theme preference for the active game target (K1 / unknown → Kotor1 slot; K2 → Kotor2 slot).
     /// </summary>
     public string UiThemeId => GetUiThemeIdForGame(_detectedGameVersion?.Title ?? GuessTitleFromPath(GamePath));
+
+    /// <summary>
+    /// Global HUD corner-bracket intensity id (full | muted | off).
+    /// </summary>
+    public string HudCornerChromeId =>
+        HudCornerChromeModes.ToId(HudCornerChromeModes.Parse(_settings.HudCornerChrome));
 
     /// <summary>
     /// Which game's settings the Settings modal is editing (defaults to the active target).
@@ -268,6 +279,24 @@ public partial class MainViewModel : ViewModelBase
                 return;
 
             ApplyAndPersistUiTheme(value.Id, SettingsGameScope);
+        }
+    }
+
+    public HudCornerChromeOption? SelectedHudCornerChromeOption
+    {
+        get => _selectedHudCornerChromeOption;
+        set
+        {
+            if (_isUpdatingHudCornerChromeSelection)
+            {
+                SetProperty(ref _selectedHudCornerChromeOption, value);
+                return;
+            }
+
+            if (!SetProperty(ref _selectedHudCornerChromeOption, value) || value == null)
+                return;
+
+            ApplyAndPersistHudCornerChrome(value.Id);
         }
     }
 
@@ -730,6 +759,39 @@ public partial class MainViewModel : ViewModelBase
         var themeId = GetUiThemeIdForGame(title);
         if (Application.Current is App app)
             app.ApplyUiTheme(themeId, title);
+    }
+
+    private void InitHudCornerChromeOptions()
+    {
+        HudCornerChromeOptions.Clear();
+        HudCornerChromeOptions.Add(new HudCornerChromeOption(HudCornerChromeModes.FullId, "Full"));
+        HudCornerChromeOptions.Add(new HudCornerChromeOption(HudCornerChromeModes.MutedId, "Muted"));
+        HudCornerChromeOptions.Add(new HudCornerChromeOption(HudCornerChromeModes.OffId, "Off"));
+
+        var id = HudCornerChromeId;
+        _isUpdatingHudCornerChromeSelection = true;
+        try
+        {
+            SelectedHudCornerChromeOption =
+                HudCornerChromeOptions.FirstOrDefault(o =>
+                    string.Equals(o.Id, id, StringComparison.OrdinalIgnoreCase))
+                ?? HudCornerChromeOptions[0];
+        }
+        finally
+        {
+            _isUpdatingHudCornerChromeSelection = false;
+        }
+    }
+
+    private void ApplyAndPersistHudCornerChrome(string modeId)
+    {
+        var normalized = HudCornerChromeModes.ToId(HudCornerChromeModes.Parse(modeId));
+        _settings.HudCornerChrome = normalized;
+        _settings.Save();
+        OnPropertyChanged(nameof(HudCornerChromeId));
+
+        if (Application.Current is App app)
+            app.ApplyCornerChromeIntensity(normalized);
     }
 
     private async Task BrowseSettingsGameAsync()

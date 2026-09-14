@@ -2,6 +2,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
+using Avalonia.Media;
 using Avalonia.Styling;
 using KPatchCore.Models;
 using KPatchLauncher.Themes;
@@ -13,6 +14,8 @@ namespace KPatchLauncher;
 
 public partial class App : Application
 {
+    private string _cornerChromeMode = HudCornerChromeModes.FullId;
+
     public override void Initialize()
     {
         AvaloniaXamlLoader.Load(this);
@@ -32,7 +35,8 @@ public partial class App : Application
             viewModel.Dialogs = new WindowDialogService(window);
             desktop.MainWindow = window;
 
-            // Apply persisted theme preference (Auto uses Kotor1 until a game is detected).
+            // Seed intensity before theme apply so ApplyUiTheme's trailing refresh uses the right mode.
+            ApplyCornerChromeIntensity(viewModel.HudCornerChromeId);
             ApplyUiTheme(viewModel.UiThemeId, gameForAuto: null);
         }
 
@@ -55,6 +59,55 @@ public partial class App : Application
             System.Diagnostics.Debug.WriteLine($"Failed to apply theme '{themeId}': {ex.Message}");
             RequestedThemeVariant = AppThemeVariants.Kotor1;
         }
+
+        // Theme swap changes AccentBrush / BorderLineBrush; refresh bracket resources.
+        ApplyCornerChromeIntensity(_cornerChromeMode);
+    }
+
+    /// <summary>
+    /// Updates HudPanel corner-bracket resources for full / muted / off.
+    /// Resolves brushes from the active theme so muted tracks the current palette.
+    /// </summary>
+    public void ApplyCornerChromeIntensity(string? modeId)
+    {
+        var mode = HudCornerChromeModes.Parse(modeId);
+        _cornerChromeMode = HudCornerChromeModes.ToId(mode);
+
+        var accent = ResolveThemeBrush("AccentBrush") ?? new SolidColorBrush(Color.Parse("#D6AE55"));
+
+        switch (mode)
+        {
+            case HudCornerChromeMode.Muted:
+                // Soft accent (not BorderLineBrush — that matches the panel frame and vanishes).
+                Resources["HudBracketBrush"] = accent;
+                Resources["HudBracketStrokeThickness"] = 1.0;
+                Resources["HudBracketOpacity"] = 0.55;
+                Resources["HudBracketVisible"] = true;
+                break;
+            case HudCornerChromeMode.Off:
+                Resources["HudBracketBrush"] = accent;
+                Resources["HudBracketStrokeThickness"] = 2.0;
+                Resources["HudBracketOpacity"] = 0.0;
+                Resources["HudBracketVisible"] = false;
+                break;
+            default:
+                Resources["HudBracketBrush"] = accent;
+                Resources["HudBracketStrokeThickness"] = 2.0;
+                Resources["HudBracketOpacity"] = 1.0;
+                Resources["HudBracketVisible"] = true;
+                break;
+        }
+    }
+
+    private IBrush? ResolveThemeBrush(string key)
+    {
+        if (TryGetResource(key, ActualThemeVariant, out var value) && value is IBrush brush)
+            return brush;
+
+        if (TryGetResource(key, RequestedThemeVariant, out value) && value is IBrush requested)
+            return requested;
+
+        return null;
     }
 
     public ThemeVariant ResolveVariant(string themeId, GameTitle? gameForAuto)

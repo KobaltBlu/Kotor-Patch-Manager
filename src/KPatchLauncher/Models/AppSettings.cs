@@ -87,6 +87,11 @@ public class AppSettings
     public string? UiThemeId { get; set; }
 
     /// <summary>
+    /// Global HUD corner-bracket intensity: full | muted | off
+    /// </summary>
+    public string HudCornerChrome { get; set; } = "full";
+
+    /// <summary>
     /// Legacy property for backwards compatibility (TODO: Remove after migration)
     /// </summary>
     [Obsolete("Use CheckedPatchIds instead")]

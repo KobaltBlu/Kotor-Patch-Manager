@@ -9,6 +9,11 @@
             <FontFamily x:Key="HudDisplayFont">avares://KPatchLauncher/Assets/Fonts/Orbitron.ttf#Orbitron,avares://KPatchLauncher/Assets/Fonts/Audiowide-Regular.ttf#Audiowide</FontFamily>
             <FontFamily x:Key="HudBodyFont">avares://KPatchLauncher/Assets/Fonts/IBMPlexSans-Regular.ttf,avares://KPatchLauncher/Assets/Fonts/IBMPlexSans-Medium.ttf,avares://KPatchLauncher/Assets/Fonts/IBMPlexSans-SemiBold.ttf#IBM Plex Sans</FontFamily>
             <FontFamily x:Key="HudMonoFont">avares://KPatchLauncher/Assets/Fonts/ShareTechMono-Regular.ttf#Share Tech Mono</FontFamily>
+            <!-- Corner chrome defaults (Full); App.ApplyCornerChromeIntensity overrides at runtime -->
+            <SolidColorBrush x:Key="HudBracketBrush" Color="#D6AE55"/>
+            <x:Double x:Key="HudBracketStrokeThickness">2</x:Double>
+            <x:Double x:Key="HudBracketOpacity">1</x:Double>
+            <x:Boolean x:Key="HudBracketVisible">True</x:Boolean>
             <ResourceDictionary.MergedDictionaries>
                 <ResourceInclude Source="avares://KPatchLauncher/Themes/HudScrollBar.axaml"/>
             </ResourceDictionary.MergedDictionaries>

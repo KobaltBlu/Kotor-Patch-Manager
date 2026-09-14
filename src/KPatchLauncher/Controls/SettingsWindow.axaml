@@ -89,6 +89,21 @@
                                         Command="{Binding OpenUiThemesFolderCommand}"
                                         MinWidth="110"/>
                             </StackPanel>
+
+                            <TextBlock Text="CORNER CHROME" Classes="caption" Margin="0,8,0,0"/>
+                            <ComboBox ItemsSource="{Binding HudCornerChromeOptions}"
+                                      SelectedItem="{Binding SelectedHudCornerChromeOption}"
+                                      HorizontalAlignment="Stretch">
+                                <ComboBox.ItemTemplate>
+                                    <DataTemplate x:DataType="vm:HudCornerChromeOption">
+                                        <TextBlock Text="{Binding Label}"/>
+                                    </DataTemplate>
+                                </ComboBox.ItemTemplate>
+                            </ComboBox>
+                            <TextBlock Text="Accent brackets on HUD panels. Shared across both games."
+                                       Classes="caption"
+                                       Opacity="0.85"
+                                       TextWrapping="Wrap"/>
                         </StackPanel>
                     </Border>
                 </StackPanel>
